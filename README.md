@@ -10,6 +10,7 @@ every cell visible rather than implied.
 | Result layout | [`docs/results.md`](docs/results.md) |
 | Timing policy | [`docs/timing-policy.md`](docs/timing-policy.md) |
 | Reference revision | [`pins/tprims-rs.rev`](pins/tprims-rs.rev) — what `status` is measured against |
+| Design record | [`docs/worklog.md`](docs/worklog.md) — decisions, fixed failures, open items |
 
 ## How it works
 
