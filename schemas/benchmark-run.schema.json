@@ -44,15 +44,16 @@
     "tprims": {
       "type": "object",
       "required": [
-        "path",
+        "url",
         "commit",
         "dirty",
         "features"
       ],
       "additionalProperties": false,
       "properties": {
-        "path": {
+        "url": {
           "type": "string",
+          "pattern": "^https?://",
           "minLength": 1
         },
         "commit": {
@@ -68,6 +69,13 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "measured_path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Where the checkout happened to live on the measuring host. Informational only: a committed manifest must validate in any checkout, so nothing resolves against this."
         }
       }
     },

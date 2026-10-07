@@ -162,10 +162,11 @@ def main():
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
         "command": " ".join(sys.argv),
         "tprims": {
-            "path": pin["TPRIMS_DIR"],
+            "url": "https://github.com/tensor4all/tprims-rs",
             "commit": rev,
             "dirty": dirty,
             "features": [f for f in pin["BUILD_FEATURES"].split(",") if f],
+            "measured_path": pin["TPRIMS_DIR"],
         },
         "harness": {
             "commit": git(checkout, "rev-parse", "HEAD"),

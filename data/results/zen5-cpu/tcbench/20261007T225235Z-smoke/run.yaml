@@ -6,11 +6,12 @@ timestamp: '2026-10-07T22:52:48.966156Z'
 command: scripts/record_run.py zen5-cpu tcbench --sizes 1 --threads 1 --dtypes f64
   --engines plan --reps 1 --aa 1 --label smoke
 tprims:
-  path: /home/shinaoka/projects/tensor4all/tprims-rs
+  url: https://github.com/tensor4all/tprims-rs
   commit: 0aeb77dd6728d94b43f5690ebbb3dfac2dde1fad
   dirty: false
   features:
   - upstream
+  measured_path: /home/shinaoka/projects/tensor4all/tprims-rs
 harness:
   commit: 0aeb77dd6728d94b43f5690ebbb3dfac2dde1fad
   dirty: false

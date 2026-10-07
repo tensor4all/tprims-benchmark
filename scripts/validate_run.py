@@ -78,13 +78,26 @@ def validate(path, check_git=True):
             errors.append(f"run_spec.covers_declared_suite should be {covers}")
 
     if check_git:
-        directory = manifest["tprims"]["path"]
         commit = manifest["tprims"]["commit"]
-        try:
-            subprocess.run(["git", "-C", directory, "cat-file", "-e", f"{commit}^{{commit}}"],
-                           check=True, capture_output=True)
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            errors.append(f"tprims.commit {commit} does not resolve in {directory}")
+        # Resolve in a checkout that exists *here*, never in the path recorded
+        # by the measuring host: a committed manifest has to be verifiable in
+        # any checkout, or it is not evidence.
+        candidates = [ROOT / "extern/tprims-rs"]
+        measured = manifest["tprims"].get("measured_path")
+        if measured and pathlib.Path(measured, ".git").exists():
+            candidates.insert(0, pathlib.Path(measured))
+        resolved = False
+        for directory in candidates:
+            if not (directory / ".git").exists():
+                continue
+            r = subprocess.run(["git", "-C", str(directory), "cat-file", "-e", f"{commit}^{{commit}}"],
+                               capture_output=True)
+            if r.returncode == 0:
+                resolved = True
+                break
+        if not resolved:
+            tried = ", ".join(str(c) for c in candidates)
+            errors.append(f"tprims.commit {commit} could not be resolved in any available checkout ({tried})")
     return errors
 
 
