@@ -24,7 +24,6 @@ So the index makes it structural and machine-checkable:
 touches `crates/` is not out of date because a doc changed.
 """
 import argparse
-import datetime
 import pathlib
 import subprocess
 import sys
@@ -108,6 +107,7 @@ def collect():
                 else:
                     status = f"{distance} behind"
             rows.append(dict(suite=suite["id"], profile=profile, commit=commit[:12],
+                             timestamp=m["timestamp"],
                              date=m["timestamp"][:10], status=status if distance is None else status,
                              report=str(report.relative_to(ROOT)) if report.exists() else None,
                              coverage=coverage,
@@ -116,8 +116,14 @@ def collect():
     return rows, reference, profiles, [s["id"] for s in suites], have_checkout
 
 
-def render(rows, reference):
-    now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+def render(rows, reference, generated):
+    """The text of the index.
+
+    `generated` is the newest *recorded* run's timestamp, not the wall clock:
+    a generated file that changes on every invocation cannot be checked in and
+    verified by CI, and the interesting fact is when the data was collected,
+    not when the file was rendered.
+    """
     out = [
         "# Result index",
         "",
@@ -125,7 +131,7 @@ def render(rows, reference):
         "this file is what the generator produces.",
         "",
         f"- Reference revision (`pins/tprims-rs.rev`): `{reference}`",
-        f"- Generated: `{now}`",
+        f"- Newest recorded run: `{generated}`",
         "- `behind` counts commits touching the suite's `invalidated_by` paths, not raw distance.",
         "",
         "| suite | profile | commit | date | coverage | status | report |",
@@ -145,7 +151,7 @@ def render(rows, reference):
     out.append("declared spec, `partial` when it was a subset. A partial run never displaces")
     out.append("a full one: the index prefers the newest full-coverage run for the cell.")
     out.append("")
-    return "\n".join(out)
+    return "\n".join(out).rstrip("\n") + "\n"
 
 
 def main():
@@ -158,7 +164,9 @@ def main():
     args = ap.parse_args()
 
     rows, reference, _profiles, _suites, have_checkout = collect()
-    text = render(rows, reference)
+    stamps = [r["timestamp"] for r in rows if r.get("timestamp")]
+    generated = max(stamps) if stamps else "none"
+    text = render(rows, reference, generated)
 
     problems = []
     if not have_checkout:
