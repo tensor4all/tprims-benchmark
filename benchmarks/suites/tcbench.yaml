@@ -1,10 +1,13 @@
 schema_version: 1
 id: tcbench
 description: >-
-  The TCCG 49-case tensor-contraction corpus, compared against the provider
-  arms (openblas/TBLIS/upstream tensorprimitives) after known-value and
-  full-output verification. Numbers come from the harness in the measured
-  checkout; see docs/timing-policy.md.
+  The TCCG 49-case tensor-contraction corpus, with the planner's own route
+  (plan), the forced packed driver (packed) and Lukas Devos's original
+  tensorprimitives-rs (upstream) as arms, after known-value and full-output
+  verification. TBLIS is a fourth arm that needs an external install
+  (TBLIS_ROOT) and is added to `engines` only for cells measured with it.
+  Numbers come from the harness in the measured checkout; see
+  docs/timing-policy.md.
 invalidated_by:
   - crates/tprims-kernel/**
   - crates/tprims-contract/**
