@@ -64,6 +64,7 @@ def host_info(profile_name, profiles):
         "arch": platform.machine(),
         "logical_cpus": logical or profile["logical_cpus"],
         "l3": l3 or profile.get("l3"),
+        "l3_domains": profile.get("l3"),
         "notes": profile.get("description"),
     }
 

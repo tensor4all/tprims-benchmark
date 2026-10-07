@@ -5,17 +5,26 @@ this file is what the generator produces.
 
 - Reference revision (`pins/tprims-rs.rev`): `0aeb77dd6728d94b43f5690ebbb3dfac2dde1fad`
 - Newest recorded run: `2026-10-07T23:05:33.177088Z`
-- `behind` counts commits touching the suite's `invalidated_by` paths, not raw distance.
+- Every page below is one `(suite, hardware profile, revision)` and carries
+  its commit and hardware itself.
 
-| suite | profile | commit | date | coverage | status | report |
-|---|---|---|---|---|---|---|
-| `tcbench` | `zen5-cpu` | `0aeb77dd6728` | 2026-10-07 | full | current | [result/zen5-cpu/tcbench.md](zen5-cpu/tcbench.md) |
-| `tcbench` | `epyc-cpu` (optional) | `-` | - | - | missing | - |
+## Cells
 
-`missing` is a normal cell, not an error: the campaign is not run on
-every profile for every commit. It becomes an error only for a profile a
-suite lists as `required`.
+The newest full-coverage page for each cell, and whether it is current.
 
-`coverage` is `full` when the cell was measured over the suite's whole
-declared spec, `partial` when it was a subset. A partial run never displaces
-a full one: the index prefers the newest full-coverage run for the cell.
+| suite | profile | revision | version | date | coverage | status | page |
+|---|---|---|---|---|---|---|---|
+| `tcbench` | `epyc-cpu` (optional) | - | - | - | - | missing | - |
+| `tcbench` | `zen5-cpu` | `0aeb77dd6728` | - | 2026-10-07 | full | current | [result/zen5-cpu/tcbench/0aeb77dd6728.md](result/zen5-cpu/tcbench/0aeb77dd6728.md) |
+
+`missing` is a normal cell, not an error: the campaign is not run on every
+profile for every commit. It becomes an error only for a profile a suite lists
+as `required`. `coverage` is `full` when the page was measured over the suite's
+whole declared spec and `partial` otherwise; a partial run never displaces a
+full-coverage page.
+
+## All pages
+
+| suite | profile | revision | version | date | coverage | status | page |
+|---|---|---|---|---|---|---|---|
+| `tcbench` | `zen5-cpu` | `0aeb77dd6728` | - | 2026-10-07 | full | current | [result/zen5-cpu/tcbench/0aeb77dd6728.md](result/zen5-cpu/tcbench/0aeb77dd6728.md) |

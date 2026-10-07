@@ -25,6 +25,7 @@ host:
   notes: 'AMD Ryzen AI 9 HX 470 (Zen5 mobile APU), 12 physical / 24 logical cores.
     Heterogeneous L3: CPUs 0-3 share 16 MiB, CPUs 4-11 share 8 MiB, so a thread set
     must be stated together with the domain it sits in.'
+  l3_domains: '0-3: 16 MiB shared; 4-11: 8 MiB shared'
 threads:
   counts:
   - 1

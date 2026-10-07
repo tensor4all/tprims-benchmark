@@ -2,7 +2,8 @@
 
 ## Source of truth for numbers
 
-Tracked reports live under `result/<profile>/<suite>.md` and are generated from
+Tracked result pages live under `result/<profile>/<suite>/<revision>.md`, one
+page per measured `(suite, hardware profile, revision)`, and are generated from
 the raw run under `data/results/<profile>/<suite>/<timestamp>/`. Do not
 duplicate result tables into `README.md` or into docs. Historical reports are
 not maintained; use git history.

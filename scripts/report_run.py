@@ -52,13 +52,24 @@ def render(manifest, suite, rows, run_dir, root):
         + (" **(dirty)**" if manifest["tprims"]["dirty"] else ""),
         f"- features: `{', '.join(manifest['tprims']['features']) or 'default'}`",
         f"- harness commit: `{manifest['harness']['commit']}`",
-        f"- host: `{manifest['host']['cpu']}` ({manifest['host']['logical_cpus']} logical)",
+        f"- hardware profile: `{manifest['target_profile']}`",
         f"- timestamp: `{manifest['timestamp']}`",
         f"- timing policy: v{manifest['timing_policy']['version']}, "
         f"{manifest['timing_policy']['statistic']} of {manifest['timing_policy']['repetitions']} reps, "
         f"priming {manifest['timing_policy']['minimum_untimed_priming_ms']} ms",
         f"- command: `{manifest['command']}`",
         f"- raw data: `{run_dir.relative_to(root)}/`",
+        "",
+        "## Hardware",
+        "",
+        f"- CPU: `{manifest['host']['cpu']}`",
+        f"- logical CPUs: `{manifest['host']['logical_cpus']}`",
+        f"- L3: `{manifest['host']['l3']}`",
+        f"- L3 domains: `{manifest['host'].get('l3_domains') or manifest['host']['l3']}`",
+        f"- OS / arch: `{manifest['host']['os']}` / `{manifest['host']['arch']}`",
+        f"- hostname: `{manifest['host']['hostname']}`",
+        f"- CPU sets: " + ", ".join(f"{t}T -> `{c}`"
+                                    for t, c in sorted(manifest["threads"]["cpu_sets"].items())),
         "",
         "Every row below passed `tcbench verify` (known values and full-output residual "
         "<= 1e-10) before timing. Values are the geometric mean over "

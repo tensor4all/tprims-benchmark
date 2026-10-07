@@ -19,9 +19,25 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
+def page_path(manifest):
+    """One page per measured (suite, profile, commit, version).
+
+    The page is named after the revision rather than the cell so that measuring
+    a new commit adds a page instead of replacing the previous one: the tree
+    keeps the history the index links to, and a reader can always see what a
+    number was measured at. A dirty checkout gets its own suffix, because its
+    numbers are not comparable with a clean build of the same commit.
+    """
+    tprims = manifest["tprims"]
+    suffix = "-dirty" if tprims["dirty"] else ""
+    version = f"-{tprims['version']}" if tprims.get("version") else ""
+    return (ROOT / "result" / manifest["target_profile"] / manifest["suite_id"]
+            / f"{tprims['commit'][:12]}{version}{suffix}.md")
+
+
 def publish(run_dir):
     manifest = yaml.safe_load((run_dir / "run.yaml").read_text())
-    report = ROOT / "result" / manifest["target_profile"] / f"{manifest['suite_id']}.md"
+    report = page_path(manifest)
     report.parent.mkdir(parents=True, exist_ok=True)
     covers = manifest["run_spec"]["covers_declared_suite"]
     header = (f"<!-- generated from {run_dir.relative_to(ROOT)}/report.md "
@@ -31,8 +47,8 @@ def publish(run_dir):
         print(f"published {report.relative_to(ROOT)} from {run_dir.relative_to(ROOT)} "
               f"(coverage={'full' if covers else 'partial'})")
     else:
-        print(f"recorded {run_dir.relative_to(ROOT)} without replacing the published report "
-              f"(partial run, and a published report already exists)")
+        print(f"kept the existing {report.relative_to(ROOT)}: this run is partial and a "
+              f"full-coverage page for the same revision already exists")
     subprocess.run([sys.executable, str(ROOT / "scripts/gen_index.py"), "--write"], check=True)
 
 

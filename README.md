@@ -6,7 +6,7 @@ every cell visible rather than implied.
 
 | | |
 |---|---|
-| Latest results | [`result/INDEX.md`](result/INDEX.md) — the only index; generated |
+| Latest results | [`result/INDEX.md`](result/INDEX.md) — generated table of contents over the per-revision pages |
 | Result layout | [`docs/results.md`](docs/results.md) |
 | Timing policy | [`docs/timing-policy.md`](docs/timing-policy.md) |
 | Reference revision | [`pins/tprims-rs.rev`](pins/tprims-rs.rev) — what `status` is measured against |

@@ -4,10 +4,19 @@
 (`benchmarks/profiles.yaml`). They are the two axes of every cell.
 
 ```text
-data/results/<profile>/<suite>/<timestamp>/   raw: run.yaml, verify-*.txt, run*.csv, *.guard, report.md
-result/<profile>/<suite>.md                   the latest full-coverage report for the cell
-result/INDEX.md                               generated: commit, date, coverage, status per cell
+data/results/<profile>/<suite>/<timestamp>/          raw: run.yaml, verify-*.txt, run*.csv, *.guard, report.md
+result/<profile>/<suite>/<commit12>[-version][-dirty].md   one page per measured revision
+result/INDEX.md                                      generated table of contents over those pages
 ```
+
+A result page is one `(suite, hardware profile, measured revision)`, and it
+carries that revision and the hardware itself: commit, version when the measured
+project has one, features, harness commit, host CPU, logical CPU count, L3, OS
+and arch, the CPU set used at each thread count, the timing policy, the providers
+and the guarantees. Measuring a new revision adds a page rather than replacing
+the previous one, so the tree keeps the history the index links to. A dirty
+checkout gets its own `-dirty` page, because those numbers are not comparable
+with a clean build of the same commit.
 
 ## run.yaml
 
@@ -28,8 +37,10 @@ It records:
 
 ## Index and staleness
 
-`result/INDEX.md` is generated. Its point is that reports are self-describing
-but the *set* of them was not: with one tracked file per cell, a cell that has
+`result/INDEX.md` is generated and has two tables: the newest full-coverage page
+per cell with its currency, and every published page keyed by revision and
+hardware. Its point is that reports are self-describing but the *set* of them
+was not: with one tracked file per cell, a cell that has
 not been re-measured keeps an old file, and a reader sees a commit hash and a
 table without being able to tell whether that cell reflects the current library.
 

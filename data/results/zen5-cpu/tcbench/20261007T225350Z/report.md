@@ -3,11 +3,21 @@
 - tprims-rs commit: `0aeb77dd6728d94b43f5690ebbb3dfac2dde1fad`
 - features: `upstream`
 - harness commit: `0aeb77dd6728d94b43f5690ebbb3dfac2dde1fad`
-- host: `AMD Ryzen AI 9 HX 470` (24 logical)
+- hardware profile: `zen5-cpu`
 - timestamp: `2026-10-07T23:05:33.177088Z`
 - timing policy: v1, best of 5 reps, priming 500 ms
 - command: `scripts/record_run.py zen5-cpu tcbench`
 - raw data: `data/results/zen5-cpu/tcbench/20261007T225350Z/`
+
+## Hardware
+
+- CPU: `AMD Ryzen AI 9 HX 470`
+- logical CPUs: `24`
+- L3: `24 MiB (2 instances)`
+- L3 domains: `0-3: 16 MiB shared; 4-11: 8 MiB shared`
+- OS / arch: `Linux 7.0.0-38-generic` / `x86_64`
+- hostname: `shinaoka-EVO-X1Pro`
+- CPU sets: 1T -> `4`, 4T -> `4-7`, 8T -> `4-11`
 
 Every row below passed `tcbench verify` (known values and full-output residual <= 1e-10) before timing. Values are the geometric mean over the timed repetitions (this run made a single complete set, so it carries no A/A) of the best wall time per engine.
 

@@ -76,6 +76,13 @@
             "null"
           ],
           "description": "Where the checkout happened to live on the measuring host. Informational only: a committed manifest must validate in any checkout, so nothing resolves against this."
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Release version of the measured revision, when the measured project has one. tprims-rs is unpublished, so it records null; a versioned project records both this and the commit."
         }
       }
     },
@@ -141,6 +148,13 @@
             "string",
             "null"
           ]
+        },
+        "l3_domains": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Per-domain L3 description from the hardware profile. On a host whose cores share one L3 this repeats `l3`; on a heterogeneous host (different L3 sizes per core group) it is the fact that decides whether a thread set spans one domain or two."
         }
       }
     },
