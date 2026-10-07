@@ -1,0 +1,83 @@
+schema_version: 1
+target_profile: zen5-cpu
+suite_id: tcbench
+suite_file: benchmarks/suites/tcbench.yaml
+timestamp: '2026-10-07T22:53:09.156287Z'
+command: scripts/record_run.py zen5-cpu tcbench --sizes 1 --threads 1 --dtypes f64
+  --engines plan --reps 1 --aa 1 --label smoke
+tprims:
+  path: /home/shinaoka/projects/tensor4all/tprims-rs
+  commit: 0aeb77dd6728d94b43f5690ebbb3dfac2dde1fad
+  dirty: false
+  features:
+  - upstream
+harness:
+  commit: 0aeb77dd6728d94b43f5690ebbb3dfac2dde1fad
+  dirty: false
+host:
+  hostname: shinaoka-EVO-X1Pro
+  cpu: AMD Ryzen AI 9 HX 470
+  os: Linux 7.0.0-38-generic
+  arch: x86_64
+  logical_cpus: 24
+  l3: 24 MiB (2 instances)
+  notes: 'AMD Ryzen AI 9 HX 470 (Zen5 mobile APU), 12 physical / 24 logical cores.
+    Heterogeneous L3: CPUs 0-3 share 16 MiB, CPUs 4-11 share 8 MiB, so a thread set
+    must be stated together with the domain it sits in.'
+threads:
+  counts:
+  - 1
+  cpu_sets:
+    '1': '4'
+  env:
+    OMP_NUM_THREADS: null
+    RAYON_NUM_THREADS: null
+    OPENBLAS_NUM_THREADS: null
+    VECLIB_MAXIMUM_THREADS: null
+    MKL_NUM_THREADS: null
+timing_policy:
+  version: 1
+  minimum_untimed_priming_ms: 500
+  statistic: best
+  repetitions: 1
+  notes: 'priming is time-based, not a call count: after an idle gate this host reports
+    up to 25% low for the first 1-2 s of sustained work'
+guards:
+  idle_window_seconds: 3
+  max_busy_percent: 5
+  attempts: 3
+  logs:
+  - run0-1m-1t.guard
+  - verify-1m-1t.guard
+providers:
+- name: openblas
+  version: null
+  commit: null
+  path: null
+  note: arm present only when the pinned harness was built with the tblis/blas feature
+- name: tblis
+  version: null
+  commit: null
+  path: null
+  note: 2.x ABI; startup self-check in the harness
+- name: upstream-tensorprimitives
+  version: null
+  commit: 8cda75e11ed26f46c0c22f9629004c84dbabc8e5
+  path: null
+  note: lkdvos/tensorprimitives-rs, called as a baseline
+invalidated_by:
+- crates/tprims-kernel/**
+- crates/tprims-contract/**
+- crates/tprims-exec/**
+- benchmarks/**
+result_files:
+- run0-1m-1t.csv
+run_spec:
+  sizes_mib:
+  - 1.0
+  dtypes:
+  - f64
+  engines:
+  - plan
+  aa: 1
+  covers_declared_suite: false

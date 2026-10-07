@@ -1,8 +1,45 @@
 name: ci
 on: [push, pull_request]
 jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python deps
+        run: python3 -m pip install --quiet -r requirements.txt
+      - name: Checkout the reference revision
+        run: ./scripts/setup_extern_deps.sh
+      - name: Declarations are well formed
+        run: |
+          python3 - <<'PY'
+          import json, yaml, jsonschema, pathlib
+          root = pathlib.Path('.')
+          run = json.loads((root/'schemas/benchmark-run.schema.json').read_text())
+          suite = json.loads((root/'schemas/benchmark-suite.schema.json').read_text())
+          jsonschema.Draft202012Validator.check_schema(run)
+          jsonschema.Draft202012Validator.check_schema(suite)
+          names = {p['name'] for p in yaml.safe_load((root/'benchmarks/profiles.yaml').read_text())['profiles']}
+          for f in (root/'benchmarks/suites').glob('*.yaml'):
+              data = yaml.safe_load(f.read_text())
+              jsonschema.validate(data, suite)
+              for p in data['required_profiles'] + data.get('optional_profiles', []):
+                  assert p in names, f'{f}: unknown profile {p}'
+          print('declarations ok')
+          PY
+      - name: Every recorded run manifest validates
+        run: |
+          shopt -s nullglob
+          files=(data/results/*/*/*/run.yaml)
+          if [ ${#files[@]} -eq 0 ]; then echo "no runs recorded yet"; exit 0; fi
+          python3 scripts/validate_run.py "${files[@]}"
+      - name: Index is current, required cells present
+        run: python3 scripts/gen_index.py --check
   smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo workflow-permission-ok
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: ./scripts/setup_extern_deps.sh
+      - name: The pinned harness builds
+        run: CARGO_BUILD_JOBS=4 ./scripts/build_for_tprims_rev.sh "$PWD/extern/tprims-rs" /tmp/pin.env tcbench

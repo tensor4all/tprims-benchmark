@@ -1,0 +1,23 @@
+schema_version: 1
+id: tcbench
+description: >-
+  The TCCG 49-case tensor-contraction corpus, compared against the provider
+  arms (openblas/TBLIS/upstream tensorprimitives) after known-value and
+  full-output verification. Numbers come from the harness in the measured
+  checkout; see docs/timing-policy.md.
+invalidated_by:
+  - crates/tprims-kernel/**
+  - crates/tprims-contract/**
+  - crates/tprims-exec/**
+  - benchmarks/**
+stale_after: 20
+required_profiles:
+  - zen5-cpu
+optional_profiles:
+  - epyc-cpu
+runs:
+  - threads: [1, 4, 8]
+    cpu_sets: ["4", "4-7", "4-11"]
+    sizes_mib: [1, 16]
+    dtypes: [f64, c64]
+    engines: [plan, packed, upstream]

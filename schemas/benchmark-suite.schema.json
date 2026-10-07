@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tensor4all.example/schemas/benchmark-suite.schema.json",
+  "title": "Benchmark Suite Declaration",
+  "type": "object",
+  "required": ["schema_version", "id", "description", "invalidated_by", "stale_after", "required_profiles", "runs"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9/_.-]*$" },
+    "description": { "type": "string", "minLength": 1 },
+    "invalidated_by": {
+      "description": "Paths in the measured repository whose commits make an existing result out of date.",
+      "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }
+    },
+    "stale_after": {
+      "description": "Number of invalidating commits between the measured revision and pins/tprims-rs.rev at which the cell becomes stale.",
+      "type": "integer", "minimum": 1
+    },
+    "required_profiles": {
+      "description": "Profiles that must have a current cell; a missing one fails CI.",
+      "type": "array", "items": { "type": "string", "minLength": 1 }
+    },
+    "optional_profiles": {
+      "description": "Profiles reported when present and shown as missing otherwise, without failing CI.",
+      "type": "array", "items": { "type": "string", "minLength": 1 }
+    },
+    "runs": {
+      "description": "The measurements this suite declares.",
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["threads", "cpu_sets", "sizes_mib", "dtypes", "engines"],
+        "additionalProperties": false,
+        "properties": {
+          "threads": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+          "cpu_sets": {
+            "description": "One line for each thread count, in the order of `threads`.",
+            "type": "array", "items": { "type": "string", "minLength": 1 }
+          },
+          "sizes_mib": { "type": "array", "items": { "type": "number", "exclusiveMinimum": 0 } },
+          "dtypes": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "engines": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "case_filter": { "type": ["string", "null"] },
+          "stress": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}
