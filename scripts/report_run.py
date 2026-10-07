@@ -40,7 +40,7 @@ def read_rows(csv_paths):
     return rows
 
 
-def render(manifest, suite, rows, run_dir):
+def render(manifest, suite, rows, run_dir, root):
     size_mib = manifest.get("run_spec", {}).get("sizes_mib", [])
     counts = manifest["threads"]["counts"]
     dtypes = manifest.get("run_spec", {}).get("dtypes", [])
@@ -58,11 +58,13 @@ def render(manifest, suite, rows, run_dir):
         f"{manifest['timing_policy']['statistic']} of {manifest['timing_policy']['repetitions']} reps, "
         f"priming {manifest['timing_policy']['minimum_untimed_priming_ms']} ms",
         f"- command: `{manifest['command']}`",
-        f"- raw data: `{run_dir}/`",
+        f"- raw data: `{run_dir.relative_to(root)}/`",
         "",
         "Every row below passed `tcbench verify` (known values and full-output residual "
-        "<= 1e-10) before timing. Values are the geometric mean over repetitions and "
-        "A/A repeats of the best wall time per engine.",
+        "<= 1e-10) before timing. Values are the geometric mean over "
+        + (f"{manifest['run_spec']['aa']} complete set repeats" if manifest['run_spec']['aa'] > 1
+           else "the timed repetitions (this run made a single complete set, so it carries no A/A)")
+        + " of the best wall time per engine.",
         "",
     ]
     for size in size_mib:
@@ -98,12 +100,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run-dir", required=True)
     args = ap.parse_args()
-    run_dir = pathlib.Path(args.run_dir)
+    run_dir = pathlib.Path(args.run_dir).resolve()
     manifest = yaml.safe_load((run_dir / "run.yaml").read_text())
     suite = yaml.safe_load((pathlib.Path(__file__).resolve().parent.parent
                             / "benchmarks/suites" / f"{manifest['suite_id']}.yaml").read_text())
     rows = read_rows(sorted(run_dir.glob("*.csv")))
-    text = render(manifest, suite, rows, run_dir)
+    text = render(manifest, suite, rows, run_dir, pathlib.Path(__file__).resolve().parent.parent)
     (run_dir / "report.md").write_text(text)
     print(f"wrote {run_dir}/report.md from {len(rows)} rows")
     return 0

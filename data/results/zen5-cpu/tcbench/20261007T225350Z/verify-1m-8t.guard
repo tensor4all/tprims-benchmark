@@ -1,0 +1,2 @@
+pinned.sh: cpus 4-11 busy after run (attempt 1); discarding it
+pinned.sh: cpus 4-11 idle before and after (attempt 2)

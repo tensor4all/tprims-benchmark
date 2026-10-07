@@ -223,18 +223,7 @@ def main():
 
     subprocess.run([sys.executable, str(ROOT / "scripts/report_run.py"), "--run-dir", str(run_dir)], check=True)
 
-    report = ROOT / "result" / args.profile / f"{args.suite_id}.md"
-    report.parent.mkdir(parents=True, exist_ok=True)
-    header = (f"<!-- generated from data/results/{args.profile}/{args.suite_id}/{name}/report.md "
-              f"by scripts/record_run.py; the report below is the source of truth -->\n\n")
-    covers = manifest["run_spec"]["covers_declared_suite"]
-    if covers or not report.exists():
-        report.write_text(header + (run_dir / "report.md").read_text())
-        print(f"published {report.relative_to(ROOT)} from {run_dir.relative_to(ROOT)} (coverage={'full' if covers else 'partial'})")
-    else:
-        print(f"recorded {run_dir.relative_to(ROOT)} without replacing the published report "
-              f"(this run is partial and a published report already exists)")
-
+    subprocess.run([sys.executable, str(ROOT / "scripts/publish_report.py"), str(run_dir)], check=True)
     subprocess.run([sys.executable, str(ROOT / "scripts/gen_index.py"), "--write"], check=True)
     return 0
 
