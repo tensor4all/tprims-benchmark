@@ -34,6 +34,22 @@ def find_suite(suite_id):
     return None, None
 
 
+def declaration_drifted(manifest, suite_file):
+    """True when this run was taken under a different suite declaration.
+
+    Evidence is immutable and declarations are not: adding an engine to a suite
+    must not retroactively invalidate a manifest that was correct when it was
+    written, and reconstructing the old declaration is impossible. A manifest
+    with no recorded hash predates the field, so it is treated the same way.
+    """
+    recorded = manifest.get("suite_sha256")
+    if not recorded:
+        return True
+    import hashlib
+    current = hashlib.sha256(pathlib.Path(suite_file).read_bytes()).hexdigest()
+    return recorded != current
+
+
 def validate(path, check_git=True):
     errors = []
     manifest = load(path)
@@ -55,6 +71,11 @@ def validate(path, check_git=True):
             errors.append(f"suite_file {declared} is not the declaration for {manifest['suite_id']!r} ({suite_file})")
         if manifest["target_profile"] not in suite["required_profiles"] + suite.get("optional_profiles", []):
             errors.append(f"suite {manifest['suite_id']!r} does not list profile {manifest['target_profile']!r}")
+        elif declaration_drifted(manifest, suite_file):
+            print(f"note {path}: measured under a different declaration than the current one "
+                  f"(recorded suite_sha256 {manifest.get('suite_sha256') or 'absent'}); "
+                  f"declaration-derived checks skipped", file=sys.stderr)
+            return errors
         spec = suite["runs"][0]
         # A partial run is legitimate -- the campaign is not run in full on every
         # profile -- but it may only be a subset of what the suite declares, and

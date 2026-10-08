@@ -62,6 +62,27 @@ def invalidating_distance(checkout, measured, reference, paths):
     return int(git(checkout, "rev-list", "--count", f"{measured}..{reference}", "--", *paths) or 0)
 
 
+def suite_hash(suite):
+    import hashlib
+    return hashlib.sha256((ROOT / "benchmarks/suites" / f"{suite['id']}.yaml").read_bytes()).hexdigest()
+
+
+def coverage_of(suite, manifest):
+    """How a page relates to the *current* declaration.
+
+    `full` and `partial` are the run's own statement, but only meaningful while
+    the declaration it was measured under is unchanged. Once the declaration
+    moves -- an arm added, a size dropped -- the page cannot be described as
+    full or partial against today's spec without comparing the two by hand, so
+    it is labelled `declaration-changed` and the reader is told rather than
+    misled. Evidence is immutable; declarations are not.
+    """
+    recorded = manifest.get("suite_sha256")
+    if recorded and recorded == suite_hash(suite):
+        return "full" if manifest["run_spec"].get("covers_declared_suite") else "partial"
+    return "declaration-changed"
+
+
 def page_relative(profile, suite, manifest):
     """The published page for a run. Must match scripts/publish_report.py."""
     tprims = manifest["tprims"]
@@ -114,7 +135,7 @@ def collect():
                     suite=suite["id"], profile=profile, required=required,
                     commit=m["tprims"]["commit"][:12], version=m["tprims"].get("version"),
                     date=m["timestamp"][:10], timestamp=m["timestamp"],
-                    coverage="full" if m["run_spec"].get("covers_declared_suite") else "partial",
+                    coverage=coverage_of(suite, m),
                     status=status, behind=distance, stale_after=suite["stale_after"],
                     page=rel if (ROOT / rel).exists() else None,
                     sort_key=(m["timestamp"], m["tprims"]["commit"][:12]),
@@ -198,9 +219,11 @@ def render(pages, missing, reference, generated):
         "",
         "`missing` is a normal cell, not an error: the campaign is not run on every",
         "profile for every commit. It becomes an error only for a profile a suite lists",
-        "as `required`. `coverage` is `full` when the page was measured over the suite's",
-        "whole declared spec and `partial` otherwise; a partial run never displaces a",
-        "full-coverage page.",
+        "as `required`. `coverage` relates a page to the *current* declaration: `full`",
+        "when it was measured over the whole spec and the declaration has not moved since,",
+        "`partial` when it covered a subset, and `declaration-changed` when the declaration",
+        "itself changed after the measurement, so the two have to be compared by hand. A",
+        "partial or declaration-changed page never displaces a full-coverage one.",
         "",
         "## All pages",
         "",

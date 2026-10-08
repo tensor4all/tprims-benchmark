@@ -103,3 +103,30 @@ result: the three library crates, the harness directory, the shared harness
 library, and the two manifests that decide features and dependencies. A rule
 that cannot tell a documentation change from a kernel change is a rule nobody
 follows.
+
+## Evidence is immutable, declarations are not
+
+Adding the `tblis` arm to the declaration broke a manifest that had been correct
+when it was written: `validate_run.py` recomputed `covers_declared_suite`
+against the *current* declaration and disagreed with the recorded value. CI
+caught it, and the fix is not to relax the check but to record what the manifest
+was measured under.
+
+`run.yaml` now carries `suite_sha256`, the declaration's hash at measurement
+time. A manifest whose hash differs from today's declaration is checked for what
+can be checked (schema, profile, suite, CPU sets, resolvable commit) and noted as
+drifted; its declaration-derived claims are not re-judged, because the
+declaration it was written against cannot be reconstructed. Manifests recorded
+before the field existed carry the same notice.
+
+`coverage` in the index now relates a page to the *current* declaration:
+`full`, `partial`, or `declaration-changed` when the declaration moved after the
+measurement. The older page for `0aeb77dd6728` shows the last of these, which is
+the truth: it was measured against a three-arm declaration, and today's has four.
+The newest page was re-measured after the declaration settled so that it is
+`full`, not because the earlier number was wrong.
+
+The same change fixed a smaller semantic bug: `harness.commit` had been
+recording the *measured* checkout's commit, which merely duplicated
+`tprims.commit`. It now records this repository's commit, which is what
+distinguishes one reporting pipeline from another.

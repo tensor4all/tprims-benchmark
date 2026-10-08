@@ -1,5 +1,3 @@
-<!-- generated from data/results/zen5-cpu/tcbench/20261008T014102Z/report.md by scripts/publish_report.py; the report below is the source of truth -->
-
 # `tcbench` on `zen5-cpu`
 
 - tprims-rs commit: `c743ccf6d6de11ed328e79ac3d0b78492c8d61b1`

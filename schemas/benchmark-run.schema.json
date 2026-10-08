@@ -346,6 +346,14 @@
           "type": "boolean"
         }
       }
+    },
+    "suite_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Hash of the suite declaration in force when the run was taken. Evidence is immutable and declarations are not: without this, a manifest and a later declaration can disagree with no way to tell which moved."
     }
   }
 }

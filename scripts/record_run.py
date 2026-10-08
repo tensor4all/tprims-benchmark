@@ -14,6 +14,7 @@ Order matters and is enforced here:
 """
 import argparse
 import datetime
+import hashlib
 import json
 import os
 import pathlib
@@ -217,6 +218,8 @@ def main():
         "target_profile": args.profile,
         "suite_id": args.suite_id,
         "suite_file": f"benchmarks/suites/{args.suite_id}.yaml",
+        "suite_sha256": hashlib.sha256(
+            (ROOT / "benchmarks/suites" / f"{args.suite_id}.yaml").read_bytes()).hexdigest(),
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
         "command": " ".join(sys.argv),
         "tprims": {
@@ -227,8 +230,8 @@ def main():
             "measured_path": pin["TPRIMS_DIR"],
         },
         "harness": {
-            "commit": git(checkout, "rev-parse", "HEAD"),
-            "dirty": bool(git(checkout, "status", "--porcelain", "--untracked-files=no")),
+            "commit": git(ROOT, "rev-parse", "HEAD"),
+            "dirty": bool(git(ROOT, "status", "--porcelain", "--untracked-files=no")),
         },
         "host": host_info(args.profile, profiles),
         "threads": {
