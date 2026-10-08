@@ -150,6 +150,22 @@ def cells(pages, missing):
     return out
 
 
+def link(page):
+    """A markdown link to a page, with a target that resolves from result/.
+
+    INDEX.md lives in result/, so the target must be relative to that
+    directory while the visible text stays the repository-relative path. Using
+    the repository-relative path for both produced links to
+    result/result/<profile>/... that 404.
+    """
+    target = pathlib.Path(page)
+    try:
+        target = target.relative_to(INDEX.parent.relative_to(ROOT))
+    except ValueError:
+        pass
+    return f"[{page}]({target})"
+
+
 def render(pages, missing, reference, generated):
     out = [
         "# Result index",
@@ -175,9 +191,9 @@ def render(pages, missing, reference, generated):
         if r is None:
             out.append(f"| `{cell['suite']}` | `{cell['profile']}`{mark} | - | - | - | - | missing | - |")
         else:
-            link = f"[{r['page']}]({r['page']})" if r.get("page") else "(no page)"
+            cell_link = link(r["page"]) if r.get("page") else "(no page)"
             out.append(f"| `{cell['suite']}` | `{cell['profile']}`{mark} | `{r['commit']}` | "
-                       f"{r['version'] or '-'} | {r['date']} | {r['coverage']} | {r['status']} | {link} |")
+                       f"{r['version'] or '-'} | {r['date']} | {r['coverage']} | {r['status']} | {cell_link} |")
     out += [
         "",
         "`missing` is a normal cell, not an error: the campaign is not run on every",
@@ -192,11 +208,23 @@ def render(pages, missing, reference, generated):
         "|---|---|---|---|---|---|---|---|",
     ]
     for r in sorted(pages, key=lambda r: (r["suite"], r["profile"], r["sort_key"]), reverse=True):
-        link = f"[{r['page']}]({r['page']})" if r.get("page") else "(no page)"
+        page_link = link(r["page"]) if r.get("page") else "(no page)"
         out.append(f"| `{r['suite']}` | `{r['profile']}` | `{r['commit']}` | {r['version'] or '-'} | "
-                   f"{r['date']} | {r['coverage']} | {r['status']} | {link} |")
+                   f"{r['date']} | {r['coverage']} | {r['status']} | {page_link} |")
     out.append("")
     return "\n".join(out).rstrip("\n") + "\n"
+
+
+def broken_links(text):
+    """Every markdown target in the index must name a file that exists."""
+    import re
+    missing = []
+    for target in re.findall(r"\[[^\]]*\]\(([^)]+)\)", text):
+        if target.startswith(("http://", "https://", "#")):
+            continue
+        if not (INDEX.parent / target).exists():
+            missing.append(target)
+    return missing
 
 
 def main():
@@ -236,6 +264,9 @@ def main():
         INDEX.write_text(text)
         print(f"wrote {INDEX.relative_to(ROOT)}")
         return 0
+    for target in broken_links(text):
+        problems.append(f"generated index links to {target}, which does not exist")
+
     if args.check:
         if not INDEX.exists() or INDEX.read_text() != text:
             problems.append("result/INDEX.md is out of date; run scripts/gen_index.py --write")
