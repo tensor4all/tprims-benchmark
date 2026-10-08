@@ -69,6 +69,63 @@ def host_info(profile_name, profiles):
     }
 
 
+# What each engine is provided by. An arm whose provider cannot be identified
+# refuses the run: a page that says "TBLIS (unknown revision)" is exactly the
+# opacity the result pages exist to remove.
+PROVIDER_OF_ENGINE = {
+    "plan": "tprims",
+    "packed": "tprims",
+    "upstream": "upstream-tensorprimitives",
+    "tblis": "tblis",
+    "ttgt": "openblas",
+    "blas": "openblas",
+}
+
+
+def tblis_identity():
+    """TBLIS revision, from $TBLIS_ROOT/PROVENANCE or the environment."""
+    root = os.environ.get("TBLIS_ROOT")
+    fields = {}
+    if root:
+        prov = pathlib.Path(root) / "PROVENANCE"
+        if prov.exists():
+            for line in prov.read_text().splitlines():
+                if "=" in line and not line.startswith("#"):
+                    k, _, v = line.partition("=")
+                    fields[k.strip()] = v.strip()
+    for key, env in (("version", "TBLIS_VERSION"), ("commit", "TBLIS_COMMIT"),
+                     ("blis_commit", "TBLIS_BLIS_COMMIT"), ("config", "TBLIS_CONFIG")):
+        if env in os.environ and not fields.get(key):
+            fields[key] = os.environ[env]
+    return root, fields
+
+
+def providers_for(engines):
+    out = []
+    names = {PROVIDER_OF_ENGINE.get(e) for e in engines}
+    if "tprims" in names:
+        out.append({"name": "tprims", "version": None, "commit": None, "path": None,
+                    "note": "the measured revision itself; see tprims above"})
+    if "upstream-tensorprimitives" in names:
+        out.append({"name": "upstream-tensorprimitives", "version": None,
+                    "commit": "8cda75e11ed26f46c0c22f9629004c84dbabc8e5", "path": None,
+                    "note": "lkdvos/tensorprimitives-rs, called through a Cargo git dependency"})
+    if "tblis" in names:
+        root, fields = tblis_identity()
+        if not root or not fields.get("commit"):
+            sys.exit(
+                "ERROR: the suite measures the tblis arm, but its identity is not recorded.\n"
+                "Write $TBLIS_ROOT/PROVENANCE with at least `commit=`, `version=`, "
+                "`blis_commit=` and `config=`, or set TBLIS_COMMIT and friends.\n"
+                "Nothing is published from an arm whose revision cannot be stated.")
+        note = f"TBLIS {fields.get('version', '?')}, configuration {fields.get('config', '?')}"
+        if fields.get("blis_commit"):
+            note += f"; bundled BLIS {fields['blis_commit']}"
+        out.append({"name": "tblis", "version": fields.get("version"), "commit": fields["commit"],
+                    "path": root, "note": note})
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("profile")
@@ -196,15 +253,7 @@ def main():
             "attempts": 3,
             "logs": sorted(set(guards)),
         },
-        "providers": [
-            {"name": "openblas", "version": None, "commit": None, "path": None,
-             "note": "arm present only when the pinned harness was built with the tblis/blas feature"},
-            {"name": "tblis", "version": os.environ.get("TBLIS_ROOT"), "commit": None,
-             "path": os.environ.get("TBLIS_ROOT"), "note": "2.x ABI; startup self-check in the harness"},
-            {"name": "upstream-tensorprimitives", "version": None,
-             "commit": "8cda75e11ed26f46c0c22f9629004c84dbabc8e5",
-             "path": None, "note": "lkdvos/tensorprimitives-rs, called as a baseline"},
-        ],
+        "providers": providers_for(engines),
         "invalidated_by": suite["invalidated_by"],
         "result_files": [str(pathlib.Path(c).relative_to(run_dir)) for c in csvs],
         "run_spec": {"sizes_mib": sizes, "dtypes": dtypes, "engines": engines, "aa": args.aa,

@@ -8,19 +8,78 @@ description: >-
   (TBLIS_ROOT) and is added to `engines` only for cells measured with it.
   Numbers come from the harness in the measured checkout; see
   docs/timing-policy.md.
+# Only paths whose change can alter a measured result. Deliberately not
+# `benchmarks/**`: a README or AGENTS.md edit does not make a measurement stale,
+# and a rule that could not tell the difference would be ignored in practice.
 invalidated_by:
   - crates/tprims-kernel/**
   - crates/tprims-contract/**
   - crates/tprims-exec/**
-  - benchmarks/**
+  - benchmarks/benchmarks/tcbench/**
+  - benchmarks/src/**
+  - Cargo.toml
+  - Cargo.lock
 stale_after: 20
 required_profiles:
   - zen5-cpu
 optional_profiles:
   - epyc-cpu
+corpus:
+  name: TCCG
+  description: >-
+    One contraction per case, from coupled-cluster (CCSD, CCSD(T)),
+    AO-to-MO integral transformation and tensor-times-matrix workloads.
+    Each case is a full tensor contraction, not a matrix multiply.
+  source: >-
+    Springer & Bientinesi, "Design of a High-Performance GEMM-like Tensor-Tensor
+    Multiplication" (arXiv:1607.00145), and the accompanying HPAC/tccg
+    benchmark.py. Shapes are rescaled from one nominal tensor size by TCCG's
+    sizing rule, so the extents are a function of that knob rather than physical
+    dimensions.
+  known_blind_spots:
+    - "Every case has unit batch extent, so a cost proportional to batch elements is invisible here."
+    - "Stride-1 extents are rounded up to a multiple of 24, so the corpus is regular by construction."
+
+engines_doc:
+  plan:
+    provider: tprims
+    summary: >-
+      This library, with its planner choosing the route per case: the packed
+      driver, or the copy-free faer path, or the elementwise path for an
+      all-batch case.
+    identity: tprims-rs (this repository's pinned revision)
+  packed:
+    provider: tprims
+    summary: >-
+      This library with the packed driver forced instead of chosen. A
+      diagnostic arm: it shows what the planner's non-packed routes buy or cost
+      on the same inputs.
+    identity: tprims-rs (this repository's pinned revision)
+  upstream:
+    provider: upstream-tensorprimitives
+    summary: >-
+      The original tensorprimitives-rs, called as a separate library through a
+      Cargo git dependency; no source copied. It is the project this library
+      was imported from, and it runs its own planner and its own thread policy.
+    identity: lkdvos/tensorprimitives-rs @ 8cda75e11ed26f46c0c22f9629004c84dbabc8e5
+    caveat: >-
+      Thread construction differs: this arm builds its own scoped workers after
+      an explicit with_threads(N), while the tprims arms borrow a host pool.
+      Pool creation is outside the timed region, but the policies are not
+      identical.
+  tblis:
+    provider: tblis
+    summary: >-
+      Actual C++ TBLIS through the existing direct FFI adapter, as the
+      third-party reference implementation.
+    identity: TBLIS 2.x at a recorded source revision, linked from TBLIS_ROOT
+    caveat: >-
+      Needs an external install, so it is an arm only for cells whose
+      declaration lists it.
+
 runs:
   - threads: [1, 4, 8]
     cpu_sets: ["4", "4-7", "4-11"]
     sizes_mib: [1, 16]
     dtypes: [f64, c64]
-    engines: [plan, packed, upstream]
+    engines: [plan, packed, upstream, tblis]

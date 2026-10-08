@@ -1,0 +1,113 @@
+schema_version: 1
+target_profile: zen5-cpu
+suite_id: tcbench
+suite_file: benchmarks/suites/tcbench.yaml
+timestamp: '2026-10-08T01:37:23.789008Z'
+command: scripts/record_run.py zen5-cpu tcbench
+tprims:
+  url: https://github.com/tensor4all/tprims-rs
+  commit: c743ccf6d6de11ed328e79ac3d0b78492c8d61b1
+  dirty: false
+  features:
+  - upstream\
+  - tblis
+  measured_path: /home/shinaoka/projects/tensor4all/tprims-rs
+harness:
+  commit: c743ccf6d6de11ed328e79ac3d0b78492c8d61b1
+  dirty: false
+host:
+  hostname: shinaoka-EVO-X1Pro
+  cpu: AMD Ryzen AI 9 HX 470
+  os: Linux 7.0.0-38-generic
+  arch: x86_64
+  logical_cpus: 24
+  l3: 24 MiB (2 instances)
+  l3_domains: '0-3: 16 MiB shared; 4-11: 8 MiB shared'
+  notes: 'AMD Ryzen AI 9 HX 470 (Zen5 mobile APU), 12 physical / 24 logical cores.
+    Heterogeneous L3: CPUs 0-3 share 16 MiB, CPUs 4-11 share 8 MiB, so a thread set
+    must be stated together with the domain it sits in.'
+threads:
+  counts:
+  - 1
+  - 4
+  - 8
+  cpu_sets:
+    '1': '4'
+    '4': 4-7
+    '8': 4-11
+  env:
+    OMP_NUM_THREADS: null
+    RAYON_NUM_THREADS: null
+    OPENBLAS_NUM_THREADS: null
+    VECLIB_MAXIMUM_THREADS: null
+    MKL_NUM_THREADS: null
+timing_policy:
+  version: 1
+  minimum_untimed_priming_ms: 500
+  statistic: best
+  repetitions: 5
+  notes: 'priming is time-based, not a call count: after an idle gate this host reports
+    up to 25% low for the first 1-2 s of sustained work'
+guards:
+  idle_window_seconds: 3
+  max_busy_percent: 5
+  attempts: 3
+  logs:
+  - run0-16m-1t.guard
+  - run0-16m-4t.guard
+  - run0-16m-8t.guard
+  - run0-1m-1t.guard
+  - run0-1m-4t.guard
+  - run0-1m-8t.guard
+  - verify-16m-1t.guard
+  - verify-16m-4t.guard
+  - verify-16m-8t.guard
+  - verify-1m-1t.guard
+  - verify-1m-4t.guard
+  - verify-1m-8t.guard
+providers:
+- name: tprims
+  version: null
+  commit: null
+  path: null
+  note: the measured revision itself; see tprims above
+- name: upstream-tensorprimitives
+  version: null
+  commit: 8cda75e11ed26f46c0c22f9629004c84dbabc8e5
+  path: null
+  note: lkdvos/tensorprimitives-rs, called through a Cargo git dependency
+- name: tblis
+  version: '2.0'
+  commit: 20cc0bcdb13ddf9fbf619138b6081a16e9e48b7f
+  path: /tmp/tprims-tblis-install
+  note: TBLIS 2.0, configuration zen3 (explicit; auto detection selected a generic
+    configuration); bundled BLIS 358e689cadd6757f564a2992cf46a2f7d6fa6bb0
+invalidated_by:
+- crates/tprims-kernel/**
+- crates/tprims-contract/**
+- crates/tprims-exec/**
+- benchmarks/benchmarks/tcbench/**
+- benchmarks/src/**
+- Cargo.toml
+- Cargo.lock
+result_files:
+- run0-1m-1t.csv
+- run0-1m-4t.csv
+- run0-1m-8t.csv
+- run0-16m-1t.csv
+- run0-16m-4t.csv
+- run0-16m-8t.csv
+run_spec:
+  sizes_mib:
+  - 1
+  - 16
+  dtypes:
+  - f64
+  - c64
+  engines:
+  - plan
+  - packed
+  - upstream
+  - tblis
+  aa: 1
+  covers_declared_suite: true

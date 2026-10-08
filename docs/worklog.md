@@ -87,3 +87,19 @@ recording a smoke run and noticing it was indistinguishable from the full one.
 - **TBLIS is not an arm of the recorded cell.** It needs an external install
   (`TBLIS_ROOT`) and is added to a suite's `engines` only for cells measured with
   it; the first cell records `plan`, `packed` and `upstream`.
+
+## A run discarded, and one rule tightened
+
+A measurement was taken while `extern/tprims-rs` sat on the merged-PR head
+`1e0bf3c`, not on `main` (the merge was a squash, so the head is not an ancestor
+of `main`). Its page would have been `diverged` against the reference and failed
+the index check for a required cell. The run and its page were discarded rather
+than published, and the pin now points at `main`; the discarded revision is
+recorded here because the fact that it happened is worth more than the file.
+
+`invalidated_by` listed `benchmarks/**`, which made a README edit mark every
+measurement stale. It now lists only paths whose change can alter a measured
+result: the three library crates, the harness directory, the shared harness
+library, and the two manifests that decide features and dependencies. A rule
+that cannot tell a documentation change from a kernel change is a rule nobody
+follows.

@@ -40,7 +40,7 @@ def read_rows(csv_paths):
     return rows
 
 
-def render(manifest, suite, rows, run_dir, root):
+def render(manifest, suite, rows, run_dir, root, providers):
     size_mib = manifest.get("run_spec", {}).get("sizes_mib", [])
     counts = manifest["threads"]["counts"]
     dtypes = manifest.get("run_spec", {}).get("dtypes", [])
@@ -59,6 +59,47 @@ def render(manifest, suite, rows, run_dir, root):
         f"priming {manifest['timing_policy']['minimum_untimed_priming_ms']} ms",
         f"- command: `{manifest['command']}`",
         f"- raw data: `{run_dir.relative_to(root)}/`",
+        "## What was measured",
+        "",
+        f"- **Corpus `{suite['corpus']['name']}`** — {suite['corpus']['description']}",
+        f"  Source: {suite['corpus']['source']}",
+    ]
+    for spot in suite["corpus"].get("known_blind_spots", []):
+        out.append(f"  Known blind spot: {spot}")
+    out += [
+        f"- **Engines** — one row per engine in every table below:",
+    ]
+    for engine in engines:
+        doc = suite["engines_doc"].get(engine)
+        if doc is None:
+            out.append(f"  - `{engine}` — (undocumented in the suite declaration)")
+            continue
+        out.append(f"  - `{engine}` — {doc['summary']}")
+        # Prefer the identity recorded in *this run's* manifest over the suite's
+        # generic sentence: a page should state what it actually measured.
+        prov = providers.get(doc.get("provider"))
+        if prov:
+            bits = [prov["name"]]
+            if prov.get("version"):
+                bits.append(f"version {prov['version']}")
+            if prov.get("commit"):
+                bits.append(f"commit `{prov['commit']}`")
+            line = ", ".join(bits)
+            if prov.get("note"):
+                line += f" — {prov['note']}"
+            out.append(f"    Identity (as measured): {line}")
+        else:
+            out.append(f"    Identity: {doc['identity']}")
+        if doc.get("caveat"):
+            out.append(f"    Caveat: {doc['caveat']}")
+    out += [
+        f"- **Sizes** — the nominal tensor size per case in MiB. TCCG's sizing rule scales",
+        f"  every extent of a case from it, so the same case at 1 MiB and 16 MiB has the",
+        f"  same shape structure at different magnitudes.",
+        f"- **dtypes** — `f64` is a real double, `c64` a complex double. The complex rows",
+        f"  are the harder case for this library and are never likelier to look good.",
+        f"- **Numbers** — milliseconds, best wall time per case and engine. See the timing",
+        f"  policy for what is inside and outside the timed region.",
         "",
         "## Hardware",
         "",
@@ -116,7 +157,9 @@ def main():
     suite = yaml.safe_load((pathlib.Path(__file__).resolve().parent.parent
                             / "benchmarks/suites" / f"{manifest['suite_id']}.yaml").read_text())
     rows = read_rows(sorted(run_dir.glob("*.csv")))
-    text = render(manifest, suite, rows, run_dir, pathlib.Path(__file__).resolve().parent.parent)
+    providers = {p["name"]: p for p in manifest.get("providers", [])}
+    text = render(manifest, suite, rows, run_dir, pathlib.Path(__file__).resolve().parent.parent,
+                  providers)
     (run_dir / "report.md").write_text(text)
     print(f"wrote {run_dir}/report.md from {len(rows)} rows")
     return 0

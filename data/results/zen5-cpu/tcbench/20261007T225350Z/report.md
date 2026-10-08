@@ -8,6 +8,27 @@
 - timing policy: v1, best of 5 reps, priming 500 ms
 - command: `scripts/record_run.py zen5-cpu tcbench`
 - raw data: `data/results/zen5-cpu/tcbench/20261007T225350Z/`
+## What was measured
+
+- **Corpus `TCCG`** — One contraction per case, from coupled-cluster (CCSD, CCSD(T)), AO-to-MO integral transformation and tensor-times-matrix workloads. Each case is a full tensor contraction, not a matrix multiply.
+  Source: Springer & Bientinesi, "Design of a High-Performance GEMM-like Tensor-Tensor Multiplication" (arXiv:1607.00145), and the accompanying HPAC/tccg benchmark.py. Shapes are rescaled from one nominal tensor size by TCCG's sizing rule, so the extents are a function of that knob rather than physical dimensions.
+  Known blind spot: Every case has unit batch extent, so a cost proportional to batch elements is invisible here.
+  Known blind spot: Stride-1 extents are rounded up to a multiple of 24, so the corpus is regular by construction.
+- **Engines** — one row per engine in every table below:
+  - `plan` — This library, with its planner choosing the route per case: the packed driver, or the copy-free faer path, or the elementwise path for an all-batch case.
+    Identity: tprims-rs (this repository's pinned revision)
+  - `packed` — This library with the packed driver forced instead of chosen. A diagnostic arm: it shows what the planner's non-packed routes buy or cost on the same inputs.
+    Identity: tprims-rs (this repository's pinned revision)
+  - `upstream` — The original tensorprimitives-rs, called as a separate library through a Cargo git dependency; no source copied. It is the project this library was imported from, and it runs its own planner and its own thread policy.
+    Identity (as measured): upstream-tensorprimitives, commit `8cda75e11ed26f46c0c22f9629004c84dbabc8e5` — lkdvos/tensorprimitives-rs, called as a baseline
+    Caveat: Thread construction differs: this arm builds its own scoped workers after an explicit with_threads(N), while the tprims arms borrow a host pool. Pool creation is outside the timed region, but the policies are not identical.
+- **Sizes** — the nominal tensor size per case in MiB. TCCG's sizing rule scales
+  every extent of a case from it, so the same case at 1 MiB and 16 MiB has the
+  same shape structure at different magnitudes.
+- **dtypes** — `f64` is a real double, `c64` a complex double. The complex rows
+  are the harder case for this library and are never likelier to look good.
+- **Numbers** — milliseconds, best wall time per case and engine. See the timing
+  policy for what is inside and outside the timed region.
 
 ## Hardware
 
