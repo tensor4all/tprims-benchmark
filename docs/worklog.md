@@ -136,3 +136,39 @@ The same change fixed a smaller semantic bug: `harness.commit` had been
 recording the *measured* checkout's commit, which merely duplicated
 `tprims.commit`. It now records this repository's commit, which is what
 distinguishes one reporting pipeline from another.
+
+## The manifest stopped stating what the harness did not do
+
+Two claims in every `run.yaml` were the recorder's own defaults rather than the
+run's report: `minimum_untimed_priming_ms` and the guard's window, threshold and
+attempt budget. They happened to be right, which is the worst kind of wrong — a
+reader had no way to tell a stale record from a live one, and a `--prime-ms` or
+`PINNED_*` override during a run would have made the manifest describe a policy
+nobody applied. tprims-rs had the other half of the same gap: the campaign
+recorded 500 ms of time-based priming while the harness did exactly one warm-up
+call (tprims-rs#78), and the guard checked the declared CPUs without their SMT
+siblings, so a busy sibling could share the measured physical core invisibly
+(tprims-rs#79).
+
+Both sides now meet in the middle:
+
+- the measured checkout's harness prints what it applies (`N ms priming` is on
+  `run`'s banner) and its guard echoes the policy it used (`pinned.sh: cpus=...
+  idle_window=3s max_busy=0.05 retries=3`) together with the per-CPU report that
+  names each SMT sibling it checked;
+- the recorder passes `--prime-ms`, keeps each run's stdout as
+  `run<N>-<size>m-<T>t.out`, reads the priming and the guard policy out of those
+  two lines, requires every run in a cell to agree, and **refuses a measured
+  checkout that reports neither** — that is the check that keeps the pin honest,
+  because a checkout predating those banners cannot produce a trustworthy
+  manifest;
+- `guards` gained `outputs` (the retained stdout) and `notes` (the sibling
+  coverage), both optional, so every previously recorded manifest still
+  validates.
+
+The pin moved to `e42f6af` and the `zen5-cpu`/`tcbench` cell was re-measured
+under the three-arm declaration, so the cell is `full` and `current` again and
+the first cell in this repository whose manifest's priming and guard are read
+back from the run. What that cell does *not* establish: it is a single complete
+set (`aa: 1`), so it carries no A/A, and the retired TBLIS column in the older
+page stays as measured.
