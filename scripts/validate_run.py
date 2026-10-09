@@ -86,12 +86,12 @@ def validate(path, check_git=True):
             if str(t) not in manifest["threads"]["cpu_sets"]:
                 errors.append(f"threads.cpu_sets is missing an entry for {t}T")
         rs = manifest.get("run_spec", {})
-        for key, declared in (("sizes_mib", spec["sizes_mib"]), ("dtypes", spec["dtypes"]),
+        for key, declared in (("sizes_mib", spec.get("sizes_mib", [])), ("dtypes", spec["dtypes"]),
                               ("engines", spec["engines"])):
             for v in rs.get(key, []):
                 if v not in declared:
                     errors.append(f"run_spec.{key} contains {v!r}, which the suite does not declare")
-        covers = (rs.get("sizes_mib") == spec["sizes_mib"]
+        covers = (rs.get("sizes_mib") == spec.get("sizes_mib", [])
                   and manifest["threads"]["counts"] == spec["threads"]
                   and rs.get("dtypes") == spec["dtypes"]
                   and rs.get("engines") == spec["engines"])

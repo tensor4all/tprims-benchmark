@@ -66,7 +66,6 @@
         "required": [
           "threads",
           "cpu_sets",
-          "sizes_mib",
           "dtypes",
           "engines"
         ],
@@ -119,6 +118,10 @@
               "string",
               "null"
             ]
+          },
+          "fixed_shapes": {
+            "type": "boolean",
+            "description": "The corpus has fixed shapes, so the nominal-size knob does not apply and the runner is given no --size. `sizes_mib` must then be absent."
           }
         }
       }

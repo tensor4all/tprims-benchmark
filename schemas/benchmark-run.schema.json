@@ -263,6 +263,14 @@
               "string",
               "null"
             ]
+          },
+          "tag": {
+            "type": "string",
+            "description": "The version tag the provider was pinned to, when it has one (a commit alone is not enough to say which release a build came from)."
+          },
+          "sha256": {
+            "type": "string",
+            "description": "sha256 of the linked artifact, when the provider is a built native library whose revision cannot be read from the binary."
           }
         }
       }
@@ -331,7 +339,8 @@
             "type": "number",
             "exclusiveMinimum": 0
           },
-          "minItems": 1
+          "minItems": 0,
+          "description": "The nominal sizes this run covered, empty when the suite declares fixed shapes."
         },
         "dtypes": {
           "type": "array",
@@ -355,6 +364,10 @@
         },
         "covers_declared_suite": {
           "type": "boolean"
+        },
+        "fixed_shapes": {
+          "type": "boolean",
+          "description": "The suite's corpus has fixed shapes; the runner was given no --size."
         }
       }
     },
