@@ -12,11 +12,21 @@ operation and its completion synchronisation, with outputs still alive.
 
 ## Priming
 
-At least 0.5 s of untimed, time-based priming per arm, and the same amount on
+At least 1.5 s of untimed, time-based priming per arm, and the same amount on
 every arm. A fixed call count is not equivalent: after an idle gate this host
 reads up to 25% low for the first 1-2 s of sustained AVX-512 work (measured:
 39.8 GFLOP/s for a kernel that reads 52.6 once warm). A count-based warm-up also
 biases a ratio when the two arms have different durations.
+
+**0.5 s was too short**, and not only as a ratio: on a case whose call is about
+2 ms, the arm measured first read 40% low (2.89 ms against 2.06 ms settled) and
+the arm measured after it looked 29% faster than the same work measured on its
+own. Every cell compares engines measured in one process in a fixed order, so the
+arm measured first — always `plan` — was the one penalised, and a pair that
+resolves to the same driver and grid differed by 27% where it must agree. At
+1.5 s the dependence on position disappears (verified at 3 s as well) and the
+same pair agrees. Two arms that resolve to the same driver and grid are the
+built-in check of this paragraph.
 
 ## Statistic and repetitions
 

@@ -180,7 +180,7 @@ def main():
     ap.add_argument("suite_id")
     ap.add_argument("--checkout", default=str(ROOT / "extern/tprims-rs"))
     ap.add_argument("--reps", type=int, default=5)
-    ap.add_argument("--prime-ms", type=int, default=500,
+    ap.add_argument("--prime-ms", type=int, default=1500,
                     help="untimed time-based priming per arm; recorded as the harness reports it")
     ap.add_argument("--aa", type=int, default=1, help="number of complete set repeats (>=2 gives A/A)")
     ap.add_argument("--jobs", type=int, default=None,
