@@ -84,9 +84,13 @@ recording a smoke run and noticing it was indistinguishable from the full one.
   optional and shows as `missing`, which is the intended presentation.
 - **`tprims.version` is recorded as null.** `tprims-rs` is unpublished; the field
   exists so a versioned project's pages are keyed by version as well as commit.
-- **TBLIS is not an arm of the recorded cell.** It needs an external install
-  (`TBLIS_ROOT`) and is added to a suite's `engines` only for cells measured with
-  it; the first cell records `plan`, `packed` and `upstream`.
+- **TBLIS is retired from the declaration.** It was the third-party reference arm,
+  but it needs an external install (`TBLIS_ROOT`) and an unpublished local
+  revision to say what it measured, which tied every cell to one host's
+  installation. The `zen5-cpu` cell records `plan`, `packed` and `upstream`; the
+  page that did measure TBLIS keeps its column, because evidence is immutable.
+  The harness keeps the feature, so a cell can declare it again. tenferro-rs
+  retired its own TBLIS extension in the same week (tenferro-rs#2004).
 
 ## A run discarded, and one rule tightened
 
@@ -124,7 +128,9 @@ before the field existed carry the same notice.
 measurement. The older page for `0aeb77dd6728` shows the last of these, which is
 the truth: it was measured against a three-arm declaration, and today's has four.
 The newest page was re-measured after the declaration settled so that it is
-`full`, not because the earlier number was wrong.
+`full`, not because the earlier number was wrong. Retiring the TBLIS arm moves
+that newest page back to `declaration-changed` again, which is the same
+statement about a different pair of declarations: four arms then, three now.
 
 The same change fixed a smaller semantic bug: `harness.commit` had been
 recording the *measured* checkout's commit, which merely duplicated
