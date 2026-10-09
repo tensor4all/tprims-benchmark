@@ -1,17 +1,16 @@
 schema_version: 1
 id: tcbench
 description: >-
-  The TCCG 49-case tensor-contraction corpus, with the planner's own route
-  (plan), the forced packed driver (packed) and Lukas Devos's original
-  tensorprimitives-rs (upstream) as arms, after known-value and full-output
-  verification. Numbers come from the harness in the measured checkout; see
-  docs/timing-policy.md.
-# TBLIS was the fourth arm and the third-party reference. It is retired: it
-# needed an external install (`TBLIS_ROOT`) and an unpublished local revision
-# to say what it measured, which made every cell depend on one host's
-# installation. The harness still has the `tblis` feature, so a cell can declare
-# it again if an independent C++ baseline is wanted. tenferro-rs retired its own
-# TBLIS extension in tenferro-rs#2004.
+  The TCCG 49-case tensor-contraction corpus: the only corpus here with rank-3 to
+  rank-6 contractions, so it is kept for the irregular strides the packed driver's
+  scatter path exists for. It is measured at one size and two widths, against the
+  planner's own route and the forced packed driver only — the lineage baseline
+  (tensorprimitives-rs) and the third width are retired, see docs/worklog.md.
+# Arms retired from this suite, with reasons in docs/worklog.md: TBLIS (needs an
+# external install and could not name its own revision), tensorprimitives-rs
+# (the project this library was extracted from, so a lineage baseline rather
+# than an independent one), the 8-thread width and the 1 MiB size (both cost a
+# third of a run each to measure the same question twice).
 # Only paths whose change can alter a measured result. Deliberately not
 # `benchmarks/**`: a README or AGENTS.md edit does not make a measurement stale,
 # and a rule that could not tell the difference would be ignored in practice.
@@ -26,8 +25,7 @@ invalidated_by:
 stale_after: 20
 required_profiles:
   - zen5-cpu
-optional_profiles:
-  - epyc-cpu
+features: []
 corpus:
   name: TCCG
   description: >-
@@ -46,6 +44,7 @@ corpus:
 
 engines_doc:
   plan:
+    label: tprims [plan]
     provider: tprims
     summary: >-
       This library, with its planner choosing the route per case: the packed
@@ -53,28 +52,17 @@ engines_doc:
       all-batch case.
     identity: tprims-rs (this repository's pinned revision)
   packed:
+    label: tprims [packed]
     provider: tprims
     summary: >-
       This library with the packed driver forced instead of chosen. A
       diagnostic arm: it shows what the planner's non-packed routes buy or cost
       on the same inputs.
     identity: tprims-rs (this repository's pinned revision)
-  upstream:
-    provider: upstream-tensorprimitives
-    summary: >-
-      The original tensorprimitives-rs, called as a separate library through a
-      Cargo git dependency; no source copied. It is the project this library
-      was imported from, and it runs its own planner and its own thread policy.
-    identity: lkdvos/tensorprimitives-rs @ 8cda75e11ed26f46c0c22f9629004c84dbabc8e5
-    caveat: >-
-      Thread construction differs: this arm builds its own scoped workers after
-      an explicit with_threads(N), while the tprims arms borrow a host pool.
-      Pool creation is outside the timed region, but the policies are not
-      identical.
 
 runs:
-  - threads: [1, 4, 8]
-    cpu_sets: ["4", "4-7", "4-11"]
-    sizes_mib: [1, 16]
+  - threads: [1, 4]
+    cpu_sets: ["4", "4-7"]
+    sizes_mib: [16]
     dtypes: [f64, c64]
-    engines: [plan, packed, upstream]
+    engines: [plan, packed]

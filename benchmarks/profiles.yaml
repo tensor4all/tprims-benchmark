@@ -11,10 +11,3 @@ profiles:
     cpu: AMD Ryzen AI 9 HX 470
     logical_cpus: 24
     l3: "0-3: 16 MiB shared; 4-11: 8 MiB shared"
-  - name: epyc-cpu
-    description: >-
-      Shared 64-core EPYC workstation used for spot checks. Contended by other
-      users, so its cells carry more caveats than a dedicated host.
-    cpu: AMD EPYC
-    logical_cpus: 64
-    l3: "socket-wide"
