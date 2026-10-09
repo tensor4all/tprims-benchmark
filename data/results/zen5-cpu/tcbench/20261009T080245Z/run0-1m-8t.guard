@@ -1,0 +1,34 @@
+pinned.sh: cpus=4-11 idle_window=3s max_busy=0.05 retries=3
+cpu4 busy=0.010
+cpu5 busy=0.000
+cpu6 busy=0.003
+cpu7 busy=0.000
+cpu8 busy=0.000
+cpu9 busy=0.003
+cpu10 busy=0.000
+cpu11 busy=0.000
+cpu16 busy=0.000 (sibling)
+cpu17 busy=0.003 (sibling)
+cpu18 busy=0.000 (sibling)
+cpu19 busy=0.000 (sibling)
+cpu20 busy=0.000 (sibling)
+cpu21 busy=0.000 (sibling)
+cpu22 busy=0.007 (sibling)
+cpu23 busy=0.010 (sibling)
+cpu4 busy=0.037
+cpu5 busy=0.003
+cpu6 busy=0.000
+cpu7 busy=0.000
+cpu8 busy=0.000
+cpu9 busy=0.000
+cpu10 busy=0.000
+cpu11 busy=0.000
+cpu16 busy=0.000 (sibling)
+cpu17 busy=0.000 (sibling)
+cpu18 busy=0.000 (sibling)
+cpu19 busy=0.003 (sibling)
+cpu20 busy=0.000 (sibling)
+cpu21 busy=0.000 (sibling)
+cpu22 busy=0.000 (sibling)
+cpu23 busy=0.000 (sibling)
+pinned.sh: cpus 4-11 idle before and after (attempt 1)
