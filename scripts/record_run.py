@@ -96,7 +96,8 @@ def tblis_identity():
                     k, _, v = line.partition("=")
                     fields[k.strip()] = v.strip()
     for key, env in (("version", "TBLIS_VERSION"), ("commit", "TBLIS_COMMIT"),
-                     ("blis_commit", "TBLIS_BLIS_COMMIT"), ("config", "TBLIS_CONFIG")):
+                     ("blis_commit", "TBLIS_BLIS_COMMIT"), ("config", "TBLIS_CONFIG"),
+                     ("tag", "TBLIS_TAG"), ("sha256", "TBLIS_SHA256")):
         if env in os.environ and not fields.get(key):
             fields[key] = os.environ[env]
     return root, fields
@@ -123,8 +124,20 @@ def providers_for(engines):
         note = f"TBLIS {fields.get('version', '?')}, configuration {fields.get('config', '?')}"
         if fields.get("blis_commit"):
             note += f"; bundled BLIS {fields['blis_commit']}"
-        out.append({"name": "tblis", "version": fields.get("version"), "commit": fields["commit"],
-                    "path": root, "note": note})
+        if fields.get("build"):
+            note += f"; built with {fields['build']}"
+        if fields.get("sha256"):
+            note += f"; libtblis.so sha256 {fields['sha256'][:16]}"
+        entry = {"name": "tblis", "version": fields.get("version"), "commit": fields["commit"],
+                 "path": root, "note": note}
+        # A tag says which release a build came from, and a hash says which bytes
+        # were linked; a commit alone says neither of those things for a built
+        # native library. Both are optional so an older PROVENANCE still records.
+        if fields.get("tag"):
+            entry["tag"] = fields["tag"]
+        if fields.get("sha256"):
+            entry["sha256"] = fields["sha256"]
+        out.append(entry)
     return out
 
 
