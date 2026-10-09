@@ -15,7 +15,7 @@ The newest full-coverage page for each cell, and whether it is current.
 | suite | profile | revision | version | date | coverage | status | page |
 |---|---|---|---|---|---|---|---|
 | `tcbench` | `epyc-cpu` (optional) | - | - | - | - | missing | - |
-| `tcbench` | `zen5-cpu` | `c743ccf6d6de` | - | 2026-10-08 | full | current | [result/zen5-cpu/tcbench/c743ccf6d6de.md](zen5-cpu/tcbench/c743ccf6d6de.md) |
+| `tcbench` | `zen5-cpu` | `c743ccf6d6de` | - | 2026-10-08 | declaration-changed | current | [result/zen5-cpu/tcbench/c743ccf6d6de.md](zen5-cpu/tcbench/c743ccf6d6de.md) |
 
 `missing` is a normal cell, not an error: the campaign is not run on every
 profile for every commit. It becomes an error only for a profile a suite lists
@@ -29,5 +29,5 @@ partial or declaration-changed page never displaces a full-coverage one.
 
 | suite | profile | revision | version | date | coverage | status | page |
 |---|---|---|---|---|---|---|---|
-| `tcbench` | `zen5-cpu` | `c743ccf6d6de` | - | 2026-10-08 | full | current | [result/zen5-cpu/tcbench/c743ccf6d6de.md](zen5-cpu/tcbench/c743ccf6d6de.md) |
+| `tcbench` | `zen5-cpu` | `c743ccf6d6de` | - | 2026-10-08 | declaration-changed | current | [result/zen5-cpu/tcbench/c743ccf6d6de.md](zen5-cpu/tcbench/c743ccf6d6de.md) |
 | `tcbench` | `zen5-cpu` | `0aeb77dd6728` | - | 2026-10-07 | declaration-changed | current | [result/zen5-cpu/tcbench/0aeb77dd6728.md](zen5-cpu/tcbench/0aeb77dd6728.md) |
