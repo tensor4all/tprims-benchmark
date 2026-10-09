@@ -40,10 +40,10 @@ def git(dir_, *args):
                           text=True, capture_output=True).stdout.strip()
 
 
-def build(checkout):
+def build(checkout, runner):
     env_file = ROOT / "target/pin.env"
     env_file.parent.mkdir(parents=True, exist_ok=True)
-    sh([ROOT / "scripts/build_for_tprims_rev.sh", checkout, env_file, "tcbench"])
+    sh([ROOT / "scripts/build_for_tprims_rev.sh", checkout, env_file, runner])
     pin = {}
     for line in env_file.read_text().splitlines():
         if "=" in line:
@@ -212,7 +212,10 @@ def main():
     checkout = pathlib.Path(args.checkout)
     if (checkout / ".git").exists() and checkout.resolve() != (ROOT / "extern/tprims-rs").resolve():
         pass
-    pin = build(checkout)
+    # The harness the suite runs, built from the same checkout as the library it
+    # measures. `tcbench` unless the suite says otherwise.
+    runner = suite.get("runner", "tcbench")
+    pin = build(checkout, runner)
     rev, dirty = pin["TPRIMS_REV"], pin["TPRIMS_DIRTY"] == "true"
     if dirty:
         print("WARNING: the measured checkout is dirty; this cell will be marked dirty", file=sys.stderr)
@@ -223,7 +226,7 @@ def main():
     run_dir.mkdir(parents=True, exist_ok=True)
 
     bin_dir = pathlib.Path(pin["BIN_DIR"])
-    tcbench = bin_dir / "tcbench"
+    tcbench = bin_dir / runner
     pinned = checkout / "benchmarks/scripts/pinned.sh"
     idle = checkout / "benchmarks/scripts/idle_cpus.py"
     if not pinned.exists() or not idle.exists():

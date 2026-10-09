@@ -123,7 +123,7 @@ def render(manifest, suite, rows, run_dir, root, providers):
         f"- CPU sets: " + ", ".join(f"{t}T -> `{c}`"
                                     for t, c in sorted(manifest["threads"]["cpu_sets"].items())),
         "",
-        "Every row below passed `tcbench verify` (known values and full-output residual "
+        f"Every row below passed `{suite.get('runner', 'tcbench')} verify` (known values and full-output residual "
         "<= 1e-10) before timing. Values are the geometric mean over "
         + (f"{manifest['run_spec']['aa']} complete set repeats" if manifest['run_spec']['aa'] > 1
            else "the timed repetitions (this run made a single complete set, so it carries no A/A)")
