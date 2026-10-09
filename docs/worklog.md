@@ -214,3 +214,41 @@ suite declares the label, `report_run.py` prints it, and nothing about the data
 changes. The old `lukas` page and its raw run are removed rather than orphaned — the
 suite id no longer exists, so no index would reference them, and the commit that
 created them keeps their history.
+
+## 2026-10-09 the arm measured first was the slow one, and it was always `plan`
+
+Every cell here compares engines measured in one process, per case, in the fixed
+`ENGINE_ORDER` that puts `plan` first. The priming was 500 ms per arm, which the
+timing policy allowed ("at least 0.5 s") and which is not enough for a short call.
+
+Measured on `ij-ik-kj` (f64, 1 MiB, 1T, about 2 ms per call), through the measured
+checkout's own guard:
+
+| priming | pair in one process | `plan` alone | `packed` alone |
+|---|---|---|---|
+| 500 ms | plan 2.885, packed 2.210 | 2.893 | 3.084 |
+| 1500 ms | plan 2.060, packed 2.202 | 2.061 | 2.206 |
+| 3000 ms | plan 2.058, packed 2.199 | 2.060 | 2.210 |
+
+The first arm measured for a case read 40% low; the arm after it looked 29% faster
+than the same work measured on its own. At 1.5 s the position dependence is gone.
+The self-check is a pair that resolves to the same driver and grid, which must
+agree: with 500 ms such a pair differed by 27% (`abcijk-ijma-mkbc`, c64, 1 MiB, 4T),
+with 1.5 s it agrees (2.722 against 2.830 ms).
+
+What this changes about what is already published:
+
+- **The cells recorded before this fix are not comparable across arms.** Their
+  absolute times for the first arm are inflated, and the later arms' are not. Both
+  suites are re-measured at the new pin and priming; the older pages stay as
+  history, marked `declaration-changed`.
+- **The claim that `tprims [plan]` wins 283 of 294 rows against the retired
+  `upstream` arm was measured with `upstream` last, i.e. advantaged.** That is an
+  upper bound on tprims' wins, not a measurement; the arm has since been deleted, so
+  it cannot be re-measured. The decision to retire it stands on its nature — the
+  project this library was extracted from — rather than on that count.
+- **The faer/packed sweep of `tprims-rs#69` has the same shape**: its arms run in a
+  fixed order per case with 500 ms of priming, so its later arms were advantaged.
+  Its conclusion is conservative in the safe direction (faer's measured advantage is
+  a lower bound, and "no packed win at 1T" is robust), but its margins are not the
+  margins of a fair comparison and are marked so in the decision log.
