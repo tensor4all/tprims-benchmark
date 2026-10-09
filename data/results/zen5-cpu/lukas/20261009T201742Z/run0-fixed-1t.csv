@@ -1,0 +1,85 @@
+case,group,dtype,engine,threads,m,n,k,macs,seconds,gflops,regular_a,regular_b,notes
+ikb_knb_inb_n2_b16,ikb_knb_inb,f64,plan,1,32,2,2,128,0.000000490,0.5224,0.0000,0.0000,faer rel_err=8.58e-17
+ikb_knb_inb_n2_b16,ikb_knb_inb,f64,packed,1,32,2,2,128,0.000001813,0.1412,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=8.58e-17
+ikb_knb_inb_n2_b16,ikb_knb_inb,f64,upstream,1,32,2,2,128,0.000002034,0.1259,0.0000,0.0000,rel_err=8.58e-17
+ikb_knb_inb_n2_b16,ikb_knb_inb,f64,tblis,1,32,2,2,128,0.000053148,0.0048,0.0000,0.0000,rel_err=8.58e-17
+ikb_knb_inb_n4_b16,ikb_knb_inb,f64,plan,1,64,4,4,1024,0.000000651,3.1459,0.0000,0.0000,faer rel_err=2.51e-16
+ikb_knb_inb_n4_b16,ikb_knb_inb,f64,packed,1,64,4,4,1024,0.000002324,0.8812,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=2.51e-16
+ikb_knb_inb_n4_b16,ikb_knb_inb,f64,upstream,1,64,4,4,1024,0.000002846,0.7196,0.0000,0.0000,rel_err=2.51e-16
+ikb_knb_inb_n4_b16,ikb_knb_inb,f64,tblis,1,64,4,4,1024,0.000054541,0.0375,0.0000,0.0000,rel_err=2.51e-16
+ikb_knb_inb_n8_b16,ikb_knb_inb,f64,plan,1,128,8,8,8192,0.000000901,18.1842,0.0000,0.0000,faer rel_err=1.91e-16
+ikb_knb_inb_n8_b16,ikb_knb_inb,f64,packed,1,128,8,8,8192,0.000003807,4.3037,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=1.91e-16
+ikb_knb_inb_n8_b16,ikb_knb_inb,f64,upstream,1,128,8,8,8192,0.000004548,3.6025,0.0000,0.0000,rel_err=1.91e-16
+ikb_knb_inb_n8_b16,ikb_knb_inb,f64,tblis,1,128,8,8,8192,0.000058638,0.2794,0.0000,0.0000,rel_err=1.91e-16
+ikb_knb_inb_n16_b16,ikb_knb_inb,f64,plan,1,256,16,16,65536,0.000003787,34.6110,0.0000,0.0000,faer rel_err=1.89e-16
+ikb_knb_inb_n16_b16,ikb_knb_inb,f64,packed,1,256,16,16,65536,0.000009869,13.2812,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=1.89e-16
+ikb_knb_inb_n16_b16,ikb_knb_inb,f64,upstream,1,256,16,16,65536,0.000010760,12.1814,0.0000,0.0000,rel_err=1.89e-16
+ikb_knb_inb_n16_b16,ikb_knb_inb,f64,tblis,1,256,16,16,65536,0.000073226,1.7900,0.0000,0.0000,rel_err=1.89e-16
+ikb_knb_inb_n2_b64,ikb_knb_inb,f64,plan,1,128,2,2,512,0.000001423,0.7196,0.0000,0.0000,faer rel_err=1.82e-16
+ikb_knb_inb_n2_b64,ikb_knb_inb,f64,packed,1,128,2,2,512,0.000005891,0.1738,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=1.82e-16
+ikb_knb_inb_n2_b64,ikb_knb_inb,f64,upstream,1,128,2,2,512,0.000006923,0.1479,0.0000,0.0000,rel_err=1.82e-16
+ikb_knb_inb_n2_b64,ikb_knb_inb,f64,tblis,1,128,2,2,512,0.000208727,0.0049,0.0000,0.0000,rel_err=1.82e-16
+ikb_knb_inb_n4_b64,ikb_knb_inb,f64,plan,1,256,4,4,4096,0.000002014,4.0675,0.0000,0.0000,faer rel_err=2.26e-16
+ikb_knb_inb_n4_b64,ikb_knb_inb,f64,packed,1,256,4,4,4096,0.000007895,1.0376,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=2.26e-16
+ikb_knb_inb_n4_b64,ikb_knb_inb,f64,upstream,1,256,4,4,4096,0.000010390,0.7885,0.0000,0.0000,rel_err=2.26e-16
+ikb_knb_inb_n4_b64,ikb_knb_inb,f64,tblis,1,256,4,4,4096,0.000216231,0.0379,0.0000,0.0000,rel_err=2.26e-16
+ikb_knb_inb_n8_b64,ikb_knb_inb,f64,plan,1,512,8,8,32768,0.000003126,20.9648,0.0000,0.0000,faer rel_err=2.69e-16
+ikb_knb_inb_n8_b64,ikb_knb_inb,f64,packed,1,512,8,8,32768,0.000013875,4.7233,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=2.69e-16
+ikb_knb_inb_n8_b64,ikb_knb_inb,f64,upstream,1,512,8,8,32768,0.000017102,3.8321,0.0000,0.0000,rel_err=2.69e-16
+ikb_knb_inb_n8_b64,ikb_knb_inb,f64,tblis,1,512,8,8,32768,0.000229494,0.2856,0.0000,0.0000,rel_err=2.69e-16
+ikb_knb_inb_n16_b64,ikb_knb_inb,f64,plan,1,1024,16,16,262144,0.000014426,36.3433,0.0000,0.0000,faer rel_err=3.43e-16
+ikb_knb_inb_n16_b64,ikb_knb_inb,f64,packed,1,1024,16,16,262144,0.000037930,13.8225,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=3.43e-16
+ikb_knb_inb_n16_b64,ikb_knb_inb,f64,upstream,1,1024,16,16,262144,0.000041427,12.6557,0.0000,0.0000,rel_err=3.43e-16
+ikb_knb_inb_n16_b64,ikb_knb_inb,f64,tblis,1,1024,16,16,262144,0.000286411,1.8305,0.0000,0.0000,rel_err=3.43e-16
+ikb_knb_inb_n2_b256,ikb_knb_inb,f64,plan,1,512,2,2,2048,0.000005160,0.7938,0.0000,0.0000,faer rel_err=1.51e-16
+ikb_knb_inb_n2_b256,ikb_knb_inb,f64,packed,1,512,2,2,2048,0.000022091,0.1854,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=1.51e-16
+ikb_knb_inb_n2_b256,ikb_knb_inb,f64,upstream,1,512,2,2,2048,0.000026459,0.1548,0.0000,0.0000,rel_err=1.51e-16
+ikb_knb_inb_n2_b256,ikb_knb_inb,f64,tblis,1,512,2,2,2048,0.000827772,0.0049,0.0000,0.0000,rel_err=1.51e-16
+ikb_knb_inb_n4_b256,ikb_knb_inb,f64,plan,1,1024,4,4,16384,0.000007624,4.2980,0.0000,0.0000,faer rel_err=1.73e-16
+ikb_knb_inb_n4_b256,ikb_knb_inb,f64,packed,1,1024,4,4,16384,0.000030306,1.0812,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=1.73e-16
+ikb_knb_inb_n4_b256,ikb_knb_inb,f64,upstream,1,1024,4,4,16384,0.000038461,0.8520,0.0000,0.0000,rel_err=1.73e-16
+ikb_knb_inb_n4_b256,ikb_knb_inb,f64,tblis,1,1024,4,4,16384,0.000849382,0.0386,0.0000,0.0000,rel_err=1.73e-16
+ikb_knb_inb_n8_b256,ikb_knb_inb,f64,plan,1,2048,8,8,131072,0.000011842,22.1368,0.0000,0.0000,faer rel_err=2.14e-16
+ikb_knb_inb_n8_b256,ikb_knb_inb,f64,packed,1,2048,8,8,131072,0.000054000,4.8545,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=2.14e-16
+ikb_knb_inb_n8_b256,ikb_knb_inb,f64,upstream,1,2048,8,8,131072,0.000063427,4.1330,0.0000,0.0000,rel_err=2.14e-16
+ikb_knb_inb_n8_b256,ikb_knb_inb,f64,tblis,1,2048,8,8,131072,0.000910465,0.2879,0.0000,0.0000,rel_err=2.14e-16
+ikb_knb_inb_n16_b256,ikb_knb_inb,f64,plan,1,4096,16,16,1048576,0.000059621,35.1747,0.0000,0.0000,faer rel_err=2.38e-16
+ikb_knb_inb_n16_b256,ikb_knb_inb,f64,packed,1,4096,16,16,1048576,0.000153414,13.6699,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=2.38e-16
+ikb_knb_inb_n16_b256,ikb_knb_inb,f64,upstream,1,4096,16,16,1048576,0.000166398,12.6032,0.0000,0.0000,rel_err=2.38e-16
+ikb_knb_inb_n16_b256,ikb_knb_inb,f64,tblis,1,4096,16,16,1048576,0.001136824,1.8447,0.0000,0.0000,rel_err=2.38e-16
+ijk_jkl_il_8x16x8,ijk_jkl_il,f64,plan,1,8,8,128,8192,0.000000551,29.7350,0.0000,0.0000,faer rel_err=4.06e-16
+ijk_jkl_il_8x16x8,ijk_jkl_il,f64,packed,1,8,8,128,8192,0.000002915,5.6206,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=4.06e-16
+ijk_jkl_il_8x16x8,ijk_jkl_il,f64,upstream,1,8,8,128,8192,0.000003376,4.8531,0.0000,0.0000,rel_err=4.06e-16
+ijk_jkl_il_8x16x8,ijk_jkl_il,f64,tblis,1,8,8,128,8192,0.000009627,1.7019,0.0000,0.0000,rel_err=4.06e-16
+ij_jk_ik_c64_n32,ij_jk_ik,c64,plan,1,32,32,32,32768,0.000005450,48.0998,0.0000,0.0000,faer rel_err=5.44e-16
+ij_jk_ik_c64_n32,ij_jk_ik,c64,packed,1,32,32,32,32768,0.000008005,32.7475,0.0000,0.0000,avx512.c64.planar.16x6 16x6 AB 128x256x768 rel_err=5.44e-16
+ij_jk_ik_c64_n32,ij_jk_ik,c64,upstream,1,32,32,32,32768,0.000008346,31.4095,0.0000,0.0000,rel_err=5.44e-16
+ij_jk_ik_c64_n32,ij_jk_ik,c64,tblis,1,32,32,32,32768,0.000014677,17.8609,0.0000,0.0000,rel_err=5.45e-16
+ij_jk_ik_f64_n64,ij_jk_ik,f64,plan,1,64,64,64,262144,0.000010439,50.2240,0.0000,0.0000,faer rel_err=2.36e-16
+ij_jk_ik_f64_n64,ij_jk_ik,f64,packed,1,64,64,64,262144,0.000015058,34.8179,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=2.36e-16
+ij_jk_ik_f64_n64,ij_jk_ik,f64,upstream,1,64,64,64,262144,0.000016350,32.0665,0.0000,0.0000,rel_err=2.36e-16
+ij_jk_ik_f64_n64,ij_jk_ik,f64,tblis,1,64,64,64,262144,0.000029033,18.0583,0.0000,0.0000,rel_err=2.36e-16
+ij_jk_kl_il_n64,ij_jk_kl_il,f64,plan,1,64,64,64,524288,0.000020838,50.3204,0.0000,0.0000,faer rel_err=5.71e-16 steps=2 m/n/k=final-step per-step MxNxK=64x64x64x2
+ij_jk_kl_il_n64,ij_jk_kl_il,f64,packed,1,64,64,64,524288,0.000029755,35.2403,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 rel_err=5.71e-16 steps=2 m/n/k=final-step per-step MxNxK=64x64x64x2
+ij_jk_kl_il_n64,ij_jk_kl_il,f64,upstream,1,64,64,64,524288,0.000032480,32.2837,0.0000,0.0000,rel_err=5.71e-16 steps=2 m/n/k=final-step per-step MxNxK=64x64x64x2
+ij_jk_kl_il_n64,ij_jk_kl_il,f64,tblis,1,64,64,64,524288,0.000058298,17.9865,0.0000,0.0000,rel_err=5.71e-16 steps=2 m/n/k=final-step per-step MxNxK=64x64x64x2
+mps_chain_L32_chi4,mps_chain,c64,plan,1,4,4,8,8192,0.000022642,2.8944,0.0000,0.0000,faer rel_err=2.16e-15 steps=64 m/n/k=final-step per-step MxNxK=4x8x4x32;4x4x8x32
+mps_chain_L32_chi4,mps_chain,c64,packed,1,4,4,8,8192,0.000048771,1.3437,0.0000,0.0000,avx512.c64.planar.16x6 16x6 AB 128x256x768 rel_err=1.63e-15 steps=64 m/n/k=final-step per-step MxNxK=4x8x4x32;4x4x8x32
+mps_chain_L32_chi4,mps_chain,c64,upstream,1,4,4,8,8192,0.000044663,1.4673,0.0000,0.0000,rel_err=1.63e-15 steps=64 m/n/k=final-step per-step MxNxK=4x8x4x32;4x4x8x32
+mps_chain_L32_chi4,mps_chain,c64,tblis,1,4,4,8,8192,0.000312047,0.2100,0.0000,0.0000,rel_err=1.53e-15 steps=64 m/n/k=final-step per-step MxNxK=4x8x4x32;4x4x8x32
+mps_chain_L32_chi8,mps_chain,c64,plan,1,8,8,16,65536,0.000040195,13.0436,0.0000,0.0000,faer rel_err=1.19e-15 steps=64 m/n/k=final-step per-step MxNxK=8x16x8x32;8x8x16x32
+mps_chain_L32_chi8,mps_chain,c64,packed,1,8,8,16,65536,0.000076412,6.8613,0.0000,0.0000,avx512.c64.planar.16x6 16x6 BA 128x256x768 | avx512.c64.planar.16x6 16x6 AB 128x256x768 rel_err=1.37e-15 steps=64 m/n/k=final-step per-step MxNxK=8x16x8x32;8x8x16x32
+mps_chain_L32_chi8,mps_chain,c64,upstream,1,8,8,16,65536,0.000073496,7.1336,0.0000,0.0000,rel_err=1.37e-15 steps=64 m/n/k=final-step per-step MxNxK=8x16x8x32;8x8x16x32
+mps_chain_L32_chi8,mps_chain,c64,tblis,1,8,8,16,65536,0.000356500,1.4707,0.0000,0.0000,rel_err=1.40e-15 steps=64 m/n/k=final-step per-step MxNxK=8x16x8x32;8x8x16x32
+mps_chain_L32_chi16,mps_chain,c64,plan,1,16,16,32,524288,0.000103441,40.5478,0.0000,0.0000,faer rel_err=2.63e-15 steps=64 m/n/k=final-step per-step MxNxK=16x32x16x32;16x16x32x32
+mps_chain_L32_chi16,mps_chain,c64,packed,1,16,16,32,524288,0.000185063,22.6642,0.0000,0.0000,avx512.c64.planar.16x6 16x6 AB 128x256x768 rel_err=2.66e-15 steps=64 m/n/k=final-step per-step MxNxK=16x32x16x32;16x16x32x32
+mps_chain_L32_chi16,mps_chain,c64,upstream,1,16,16,32,524288,0.000194330,21.5834,0.0000,0.0000,rel_err=2.66e-15 steps=64 m/n/k=final-step per-step MxNxK=16x32x16x32;16x16x32x32
+mps_chain_L32_chi16,mps_chain,c64,tblis,1,16,16,32,524288,0.000536754,7.8142,0.0000,0.0000,rel_err=1.70e-15 steps=64 m/n/k=final-step per-step MxNxK=16x32x16x32;16x16x32x32
+mps_chain_L32_chi32,mps_chain,c64,plan,1,32,32,64,4194304,0.000699886,47.9427,0.0000,0.0000,faer rel_err=3.21e-15 steps=64 m/n/k=final-step per-step MxNxK=32x64x32x32;32x32x64x32
+mps_chain_L32_chi32,mps_chain,c64,packed,1,32,32,64,4194304,0.000966590,34.7142,0.0000,0.0000,avx512.c64.planar.16x6 16x6 AB 128x256x768 rel_err=3.28e-15 steps=64 m/n/k=final-step per-step MxNxK=32x64x32x32;32x32x64x32
+mps_chain_L32_chi32,mps_chain,c64,upstream,1,32,32,64,4194304,0.000988290,33.9520,0.0000,0.0000,rel_err=3.28e-15 steps=64 m/n/k=final-step per-step MxNxK=32x64x32x32;32x32x64x32
+mps_chain_L32_chi32,mps_chain,c64,tblis,1,32,32,64,4194304,0.001516759,22.1225,0.0000,0.0000,rel_err=3.55e-15 steps=64 m/n/k=final-step per-step MxNxK=32x64x32x32;32x32x64x32
+mps_chain_L32_chi64,mps_chain,c64,plan,1,64,64,128,33554432,0.006764295,39.6842,0.0000,0.0000,avx512.c64.planar.16x6 16x6 AB 128x256x768 rel_err=4.41e-15 steps=64 m/n/k=final-step per-step MxNxK=64x128x64x32;64x64x128x32
+mps_chain_L32_chi64,mps_chain,c64,packed,1,64,64,128,33554432,0.006933037,38.7183,0.0000,0.0000,avx512.c64.planar.16x6 16x6 AB 128x256x768 rel_err=4.41e-15 steps=64 m/n/k=final-step per-step MxNxK=64x128x64x32;64x64x128x32
+mps_chain_L32_chi64,mps_chain,c64,upstream,1,64,64,128,33554432,0.007162783,37.4764,0.0000,0.0000,rel_err=4.41e-15 steps=64 m/n/k=final-step per-step MxNxK=64x128x64x32;64x64x128x32
+mps_chain_L32_chi64,mps_chain,c64,tblis,1,64,64,128,33554432,0.008798693,30.5086,0.0000,0.0000,rel_err=4.10e-15 steps=64 m/n/k=final-step per-step MxNxK=64x128x64x32;64x64x128x32

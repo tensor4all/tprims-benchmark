@@ -1,0 +1,111 @@
+# `lukas` on `zen5-cpu`
+
+- tprims-rs commit: `968c6c3972e0f3af11c9aaf9049610fd4de4bf02`
+- features: `upstream, tblis`
+- harness commit: `c01506e5f9e8ef434ba80a9329cc232b38cf2e7c`
+- hardware profile: `zen5-cpu`
+- timestamp: `2026-10-09T20:19:32.761352Z`
+- timing policy: v1, best of 5 reps, priming 500 ms
+- command: `scripts/record_run.py zen5-cpu lukas --jobs 24`
+- raw data: `data/results/zen5-cpu/lukas/20261009T201742Z/`
+## What was measured
+
+- **Corpus `Lukas per-shape set`** — Twenty-one cases in four families: `ikb,knb->inb` f64 with i = k = n in {2,4,8,16} and batch in {16,64,256}; `ijk,jkl->il` f64 8x16x8x8; `ij,jk->ik` c64 n = 32 and f64 n = 64; `ij,jk,kl->il` f64 n = 64 in the fixed pairwise order ((ij,jk),kl); and a c64 MPS chain of 32 sites at uniform bond dimension chi in {4,8,16,32,64}, two steps per site and one timed call per whole chain. They range from an overhead-dominated 0.9 us to a 4.8 ms chain, which is the point of the set: the ranking of engines changes across it.
+  Source: Reconstructed from the transcribed figure in tprims-rs#61, which Lukas Devos measured on Rusty worker5252 (exclusive node, 2026-09-23, single-threaded, median of three repeat arms). His script is not in any public tree, so the case definitions are the working assumptions recorded in experiments/three-engine-contract/README.md and carried by lukbench's corpus, not a copy of his measurement.
+  Known blind spot: One size per case: a ratio here says nothing about a neighbouring size, and the set is not a sweep.
+  Known blind spot: An MPS chain is one timed call per whole chain, so a per-step cost is a derived quantity, not a measurement.
+  Known blind spot: The corpus is regular by construction: contiguous column-major operands, one batch axis at most, no strided or transposed layouts.
+- **Engines** — one row per engine in every table below:
+  - `plan` — This library with its planner choosing the route per case: the packed driver, or the copy-free faer path, or the elementwise pass for an all-batch case.
+    Identity (as measured): tprims — the measured revision itself; see tprims above
+  - `packed` — This library with the packed driver forced. A diagnostic arm: it shows what the planner's other routes buy or cost on the same inputs.
+    Identity (as measured): tprims — the measured revision itself; see tprims above
+  - `upstream` — The original tensorprimitives-rs, called as a separate library through a Cargo git dependency; no source copied. It is the project this library was imported from, so it is a lineage baseline rather than an independent one.
+    Identity (as measured): upstream-tensorprimitives, commit `8cda75e11ed26f46c0c22f9629004c84dbabc8e5` — lkdvos/tensorprimitives-rs, called through a Cargo git dependency
+    Caveat: Not independent: this library was extracted from that project. Its thread construction also differs, as it builds its own scoped workers after an explicit with_threads(N) while the tprims arms borrow a host pool.
+  - `tblis` — Actual C++ TBLIS through the direct FFI adapter, as the independent third-party reference implementation. Pinned by release tag, not by a local revision: `benchmarks/scripts/build_tblis.sh` of the measured checkout builds it from the tag and writes the PROVENANCE this repository records.
+    Identity (as measured): tblis, version 2.0, commit `b16a732939d8454021e0a0f0097cf1cc1dd3ab19` — TBLIS 2.0, configuration zen3; bundled BLIS 358e689cadd6757f564a2992cf46a2f7d6fa6bb0; built with ./configure --prefix=/home/shinaoka/opt/tblis-v2.0-beta2-zen3 --with-blis-config-family=zen3 (cmake, Unix Makefiles, Release); libtblis.so sha256 407b4f6fef7f4ede
+    Caveat: Needs an install prefix (`TBLIS_ROOT`), and TBLIS 2.x builds through CMake, so the prefix cannot be made inside a bare checkout. The page repeats the tag, commit, bundled BLIS revision and artifact hash the manifest recorded.
+- **Shapes** — the corpus has fixed shapes, so there is no nominal-size knob and the runner is given no `--size`; each table below is one dtype and thread count over the whole corpus.
+- **dtypes** — `f64` is a real double, `c64` a complex double. The complex rows
+  are the harder case for this library and are never likelier to look good.
+- **Numbers** — milliseconds, best wall time per case and engine. See the timing
+  policy for what is inside and outside the timed region.
+
+## Hardware
+
+- CPU: `AMD Ryzen AI 9 HX 470`
+- logical CPUs: `24`
+- L3: `24 MiB (2 instances)`
+- L3 domains: `0-3: 16 MiB shared; 4-11: 8 MiB shared`
+- OS / arch: `Linux 7.0.0-38-generic` / `x86_64`
+- hostname: `shinaoka-EVO-X1Pro`
+- CPU sets: 1T -> `4`, 4T -> `4-7`
+
+Every row below passed `lukbench verify` (known values and full-output residual <= 1e-10) before timing. Values are the geometric mean over the timed repetitions (this run made a single complete set, so it carries no A/A) of the best wall time per engine.
+
+## fixed shapes, f64, 1T (CPU 4)
+
+| case | plan (ms) | packed (ms) | upstream (ms) | tblis (ms) |
+|---|---|---|---|---|
+| `ij_jk_ik_f64_n64` | 0.0104 | 0.0151 | 0.0164 | 0.0290 |
+| `ij_jk_kl_il_n64` | 0.0208 | 0.0298 | 0.0325 | 0.0583 |
+| `ijk_jkl_il_8x16x8` | 0.0006 | 0.0029 | 0.0034 | 0.0096 |
+| `ikb_knb_inb_n16_b16` | 0.0038 | 0.0099 | 0.0108 | 0.0732 |
+| `ikb_knb_inb_n16_b256` | 0.0596 | 0.1534 | 0.1664 | 1.1368 |
+| `ikb_knb_inb_n16_b64` | 0.0144 | 0.0379 | 0.0414 | 0.2864 |
+| `ikb_knb_inb_n2_b16` | 0.0005 | 0.0018 | 0.0020 | 0.0531 |
+| `ikb_knb_inb_n2_b256` | 0.0052 | 0.0221 | 0.0265 | 0.8278 |
+| `ikb_knb_inb_n2_b64` | 0.0014 | 0.0059 | 0.0069 | 0.2087 |
+| `ikb_knb_inb_n4_b16` | 0.0007 | 0.0023 | 0.0028 | 0.0545 |
+| `ikb_knb_inb_n4_b256` | 0.0076 | 0.0303 | 0.0385 | 0.8494 |
+| `ikb_knb_inb_n4_b64` | 0.0020 | 0.0079 | 0.0104 | 0.2162 |
+| `ikb_knb_inb_n8_b16` | 0.0009 | 0.0038 | 0.0045 | 0.0586 |
+| `ikb_knb_inb_n8_b256` | 0.0118 | 0.0540 | 0.0634 | 0.9105 |
+| `ikb_knb_inb_n8_b64` | 0.0031 | 0.0139 | 0.0171 | 0.2295 |
+| **geomean** | 0.0038 | 0.0125 | 0.0146 | 0.1500 |
+
+## fixed shapes, f64, 4T (CPU 4-7)
+
+| case | plan (ms) | packed (ms) | upstream (ms) | tblis (ms) |
+|---|---|---|---|---|
+| `ij_jk_ik_f64_n64` | 0.0104 | 0.0151 | 0.0372 | 0.0193 |
+| `ij_jk_kl_il_n64` | 0.0208 | 0.0303 | 0.0715 | 0.0379 |
+| `ijk_jkl_il_8x16x8` | 0.0006 | 0.0029 | 0.0031 | 0.0124 |
+| `ikb_knb_inb_n16_b16` | 0.0038 | 0.0099 | 0.0259 | 0.1273 |
+| `ikb_knb_inb_n16_b256` | 0.0182 | 0.0415 | 0.1423 | 0.7154 |
+| `ikb_knb_inb_n16_b64` | 0.0143 | 0.0380 | 0.0494 | 0.5274 |
+| `ikb_knb_inb_n2_b16` | 0.0005 | 0.0018 | 0.0020 | 0.0187 |
+| `ikb_knb_inb_n2_b256` | 0.0048 | 0.0223 | 0.0265 | 0.2284 |
+| `ikb_knb_inb_n2_b64` | 0.0013 | 0.0059 | 0.0070 | 0.0613 |
+| `ikb_knb_inb_n4_b16` | 0.0007 | 0.0024 | 0.0027 | 0.0416 |
+| `ikb_knb_inb_n4_b256` | 0.0076 | 0.0300 | 0.0374 | 0.2261 |
+| `ikb_knb_inb_n4_b64` | 0.0020 | 0.0079 | 0.0100 | 0.0616 |
+| `ikb_knb_inb_n8_b16` | 0.0009 | 0.0038 | 0.0044 | 0.0922 |
+| `ikb_knb_inb_n8_b256` | 0.0121 | 0.0538 | 0.0661 | 0.2461 |
+| `ikb_knb_inb_n8_b64` | 0.0032 | 0.0141 | 0.0162 | 0.1615 |
+| **geomean** | 0.0035 | 0.0115 | 0.0169 | 0.0910 |
+
+## fixed shapes, c64, 1T (CPU 4)
+
+| case | plan (ms) | packed (ms) | upstream (ms) | tblis (ms) |
+|---|---|---|---|---|
+| `ij_jk_ik_c64_n32` | 0.0055 | 0.0080 | 0.0083 | 0.0147 |
+| `mps_chain_L32_chi16` | 0.1034 | 0.1851 | 0.1943 | 0.5368 |
+| `mps_chain_L32_chi32` | 0.6999 | 0.9666 | 0.9883 | 1.5168 |
+| `mps_chain_L32_chi4` | 0.0226 | 0.0488 | 0.0447 | 0.3120 |
+| `mps_chain_L32_chi64` | 6.7643 | 6.9330 | 7.1628 | 8.7987 |
+| `mps_chain_L32_chi8` | 0.0402 | 0.0764 | 0.0735 | 0.3565 |
+| **geomean** | 0.1159 | 0.1825 | 0.1831 | 0.4764 |
+
+## fixed shapes, c64, 4T (CPU 4-7)
+
+| case | plan (ms) | packed (ms) | upstream (ms) | tblis (ms) |
+|---|---|---|---|---|
+| `ij_jk_ik_c64_n32` | 0.0055 | 0.0081 | 0.0448 | 0.0137 |
+| `mps_chain_L32_chi16` | 0.1041 | 0.1844 | 2.2022 | 0.7595 |
+| `mps_chain_L32_chi32` | 0.7004 | 0.9787 | 3.2240 | 1.1426 |
+| `mps_chain_L32_chi4` | 0.0222 | 0.0501 | 0.7113 | 0.5378 |
+| `mps_chain_L32_chi64` | 2.5885 | 2.5734 | 5.9357 | 3.7572 |
+| `mps_chain_L32_chi8` | 0.0394 | 0.0771 | 1.3403 | 0.7117 |
+| **geomean** | 0.0983 | 0.1562 | 1.1029 | 0.5073 |

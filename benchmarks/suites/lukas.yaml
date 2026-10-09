@@ -1,0 +1,91 @@
+schema_version: 1
+id: lukas
+description: >-
+  Lukas Devos's per-shape contraction set, rebuilt from the figure of tprims-rs#61:
+  small and large batched GEMMs and the steps of a 32-site MPS chain, at fixed extents.
+  It is measured by `lukbench`, the harness that owns this corpus, against the planner's
+  own route, the forced packed driver, Lukas's own tensorprimitives-rs, and TBLIS as the
+  independent reference implementation. The campaign's nominal-size axis does not apply:
+  here the cases *are* the shapes.
+runner: lukbench
+features:
+  - upstream
+  - tblis
+# Same rule as the tcbench suite: only paths whose change can alter a measured result.
+invalidated_by:
+  - crates/tprims-kernel/**
+  - crates/tprims-contract/**
+  - crates/tprims-exec/**
+  - benchmarks/benchmarks/lukbench/**
+  - benchmarks/src/**
+  - Cargo.toml
+  - Cargo.lock
+stale_after: 20
+required_profiles:
+  - zen5-cpu
+optional_profiles:
+  - epyc-cpu
+corpus:
+  name: Lukas per-shape set
+  description: >-
+    Twenty-one cases in four families: `ikb,knb->inb` f64 with i = k = n in
+    {2,4,8,16} and batch in {16,64,256}; `ijk,jkl->il` f64 8x16x8x8; `ij,jk->ik`
+    c64 n = 32 and f64 n = 64; `ij,jk,kl->il` f64 n = 64 in the fixed pairwise
+    order ((ij,jk),kl); and a c64 MPS chain of 32 sites at uniform bond
+    dimension chi in {4,8,16,32,64}, two steps per site and one timed call per
+    whole chain. They range from an overhead-dominated 0.9 us to a 4.8 ms chain,
+    which is the point of the set: the ranking of engines changes across it.
+  source: >-
+    Reconstructed from the transcribed figure in tprims-rs#61, which Lukas Devos
+    measured on Rusty worker5252 (exclusive node, 2026-09-23, single-threaded,
+    median of three repeat arms). His script is not in any public tree, so the
+    case definitions are the working assumptions recorded in
+    experiments/three-engine-contract/README.md and carried by lukbench's
+    corpus, not a copy of his measurement.
+  known_blind_spots:
+    - "One size per case: a ratio here says nothing about a neighbouring size, and the set is not a sweep."
+    - "An MPS chain is one timed call per whole chain, so a per-step cost is a derived quantity, not a measurement."
+    - "The corpus is regular by construction: contiguous column-major operands, one batch axis at most, no strided or transposed layouts."
+engines_doc:
+  plan:
+    provider: tprims
+    summary: >-
+      This library with its planner choosing the route per case: the packed
+      driver, or the copy-free faer path, or the elementwise pass for an
+      all-batch case.
+    identity: tprims-rs (this repository's pinned revision)
+  packed:
+    provider: tprims
+    summary: >-
+      This library with the packed driver forced. A diagnostic arm: it shows what
+      the planner's other routes buy or cost on the same inputs.
+    identity: tprims-rs (this repository's pinned revision)
+  upstream:
+    provider: upstream-tensorprimitives
+    summary: >-
+      The original tensorprimitives-rs, called as a separate library through a
+      Cargo git dependency; no source copied. It is the project this library was
+      imported from, so it is a lineage baseline rather than an independent one.
+    identity: lkdvos/tensorprimitives-rs @ 8cda75e11ed26f46c0c22f9629004c84dbabc8e5
+    caveat: >-
+      Not independent: this library was extracted from that project. Its thread
+      construction also differs, as it builds its own scoped workers after an
+      explicit with_threads(N) while the tprims arms borrow a host pool.
+  tblis:
+    provider: tblis
+    summary: >-
+      Actual C++ TBLIS through the direct FFI adapter, as the independent
+      third-party reference implementation. Pinned by release tag, not by a local
+      revision: `benchmarks/scripts/build_tblis.sh` of the measured checkout builds
+      it from the tag and writes the PROVENANCE this repository records.
+    identity: TBLIS v2.0-beta2 (the only tagged 2.0; its commit and the BLIS revision are recorded per run)
+    caveat: >-
+      Needs an install prefix (`TBLIS_ROOT`), and TBLIS 2.x builds through CMake,
+      so the prefix cannot be made inside a bare checkout. The page repeats the
+      tag, commit, bundled BLIS revision and artifact hash the manifest recorded.
+runs:
+  - threads: [1, 4]
+    cpu_sets: ["4", "4-7"]
+    dtypes: [f64, c64]
+    engines: [plan, packed, upstream, tblis]
+    fixed_shapes: true

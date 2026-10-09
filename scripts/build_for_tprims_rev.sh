@@ -52,6 +52,8 @@ bin_dir="$target/$subdir"
     printf 'TPRIMS_DIRTY=%q\n' "$dirty"
     printf 'TPRIMS_DIR=%q\n' "$TPRIMS_DIR"
     printf 'BIN_DIR=%q\n' "$bin_dir"
-    printf 'BUILD_FEATURES=%q\n' "$FEATURES"
+    # Not `%q`: a feature list is identifiers and commas, and quoting it would put a
+    # backslash in front of every comma the manifest has to split on.
+    printf 'BUILD_FEATURES=%s\n' "$FEATURES"
 } > "$OUT_FILE"
 echo "built ${BINS[*]} for tprims-rs $rev (dirty=$dirty) in $bin_dir" >&2
