@@ -1,0 +1,172 @@
+# threads: requested=1 pool=1 budget=1
+host        : shinaoka-EVO-X1Pro
+target      : x86_64 / linux
+cpu features: avx2 fma avx512f avx512dq 
+caches      : L1=48KiB/12-way/2sh L2=1024KiB/16-way/2sh L3=8192KiB/16-way/16sh (via sysfs), blocking=legacy
+l3 domains  : t1=1
+baselines   : blas=false
+
+running 49 cases at 16 MiB nominal tensor size, 5 reps, 500 ms priming, stress=none
+
+
+=== f64 ===
+             case |      m |     n |     k | regA | regB | plan GF/s | packed GF/s 
+------------------+--------+-------+-------+------+------+-----------+-------------
+         ij-ik-kj |   1464 |  1448 |  1464 | 0.00 | 0.00 |      45.7 |        48.0 
+       ij-ikl-ljk |    144 |   128 | 18432 | 1.00 | 1.00 |      38.5 |        38.4 
+       ij-kil-lkj |    144 |   128 | 20736 | 1.00 | 1.00 |      35.5 |        35.5 
+       ijk-ikl-lj |  18432 |   128 |   144 | 1.00 | 1.00 |      43.3 |        43.4 
+       ijk-il-jlk |    144 | 18432 |   128 | 1.00 | 1.00 |      39.6 |        39.3 
+       ijk-ilk-jl |  18432 |   144 |   128 | 1.00 | 1.00 |      44.1 |        44.3 
+       ijk-ilk-lj |  18432 |   128 |   144 | 1.00 | 1.00 |      43.8 |        43.6 
+     ijk-ilmk-mjl |   1920 |    40 |  1920 | 1.00 | 1.00 |      39.5 |        39.3 
+   ijkl-imjn-lnkm |   1920 |  1920 |  1600 | 1.00 | 1.00 |      46.7 |        46.7 
+   ijkl-imjn-nlmk |   1920 |  1600 |  1920 | 1.00 | 1.00 |      46.3 |        46.3 
+   ijkl-imkn-jnlm |   1920 |  1920 |  1600 | 1.00 | 1.00 |      46.7 |        46.7 
+   ijkl-imkn-njml |   1920 |  1600 |  1920 | 1.00 | 1.00 |      46.9 |        46.9 
+   ijkl-imln-jnkm |   1920 |  1920 |  1600 | 1.00 | 1.00 |      47.2 |        47.1 
+   ijkl-imln-njmk |   1920 |  1600 |  1920 | 1.00 | 1.00 |      47.1 |        47.1 
+   ijkl-imnj-nlkm |   1920 |  1600 |  1920 | 1.00 | 1.00 |      46.6 |        46.5 
+   ijkl-imnk-njml |   1920 |  1600 |  1920 | 1.00 | 1.00 |      47.2 |        47.4 
+   ijkl-minj-nlmk |   1920 |  1600 |  2304 | 1.00 | 1.00 |      45.6 |        45.6 
+   ijkl-mink-jnlm |   1920 |  1920 |  1920 | 1.00 | 1.00 |      46.6 |        46.6 
+   ijkl-minl-njmk |   1920 |  1600 |  2304 | 1.00 | 1.00 |      47.0 |        47.0 
+     aqrs-pa-pqrs |     48 | 64000 |    48 | 0.00 | 0.00 |      38.0 |        32.0 
+     abrs-qb-aqrs |     40 | 76800 |    48 | 1.00 | 1.00 |      34.9 |        35.0 
+     abcs-rc-abrs |     40 | 76800 |    48 | 1.00 | 1.00 |      30.4 |        30.3 
+       abj-bka-kj |  20736 |   128 |   144 | 1.00 | 1.00 |      39.1 |        38.1 
+       ajb-kba-jk |  18432 |   144 |   144 | 1.00 | 1.00 |      42.0 |        41.9 
+     abjc-cbka-kj |  92160 |    40 |    48 | 1.00 | 1.00 |      10.6 |        10.6 
+     ajbc-ckba-jk |  92160 |    48 |    40 | 1.00 | 1.00 |      18.0 |        18.0 
+     abjc-kbac-jk |  76800 |    48 |    48 | 1.00 | 1.00 |      27.2 |        27.5 
+   abjcd-dkbac-jk | 230400 |    24 |    20 | 1.00 | 1.00 |      13.0 |        13.0 
+   adbjc-cbdka-kj | 230400 |    20 |    24 | 1.00 | 1.00 |       5.5 |         5.4 
+   ajbdc-ckbad-jk | 230400 |    24 |    20 | 1.00 | 1.00 |      13.0 |        13.0 
+ abcijk-ijma-mkbc |   6912 |  1728 |    24 | 1.00 | 1.00 |      41.5 |        41.4 
+ abcijk-ijmb-mkac |   3456 |  3456 |    24 | 1.00 | 0.67 |      40.8 |        41.3 
+ abcijk-ijmc-mkab |   3456 |  3456 |    24 | 1.00 | 0.67 |      38.9 |        39.0 
+ abcijk-ikma-mjbc |   6912 |  1728 |    24 | 1.00 | 1.00 |      41.4 |        41.3 
+ abcijk-ikmb-mjac |   3456 |  3456 |    24 | 1.00 | 0.67 |      40.7 |        41.0 
+ abcijk-ikmc-mjab |   3456 |  3456 |    24 | 1.00 | 0.67 |      38.8 |        38.8 
+ abcijk-jkma-mibc |   6912 |  1728 |    24 | 1.00 | 1.00 |      41.7 |        41.8 
+ abcijk-jkmb-miac |   3456 |  3456 |    24 | 1.00 | 0.67 |      40.8 |        41.1 
+ abcijk-jkmc-miab |   3456 |  3456 |    24 | 1.00 | 0.67 |      38.6 |        38.6 
+ abcijk-eiab-jkec |   3456 |  3456 |    24 | 1.00 | 0.67 |      38.7 |        38.7 
+ abcijk-eiac-jkeb |   3456 |  3456 |    24 | 1.00 | 0.67 |      41.2 |        41.1 
+ abcijk-eibc-jkea |   1728 |  6912 |    24 | 1.00 | 1.00 |      41.7 |        41.7 
+ abcijk-ejab-ikec |   3456 |  3456 |    24 | 1.00 | 0.67 |      39.1 |        39.0 
+ abcijk-ejac-ikeb |   3456 |  3456 |    24 | 1.00 | 0.67 |      41.0 |        41.2 
+ abcijk-ejbc-ikea |   1728 |  6912 |    24 | 1.00 | 1.00 |      41.4 |        41.3 
+ abcijk-ekab-ijec |   3456 |  3456 |    24 | 1.00 | 0.67 |      39.1 |        39.1 
+ abcijk-ekac-ijeb |   3456 |  3456 |    24 | 1.00 | 0.67 |      41.1 |        41.4 
+ abcijk-ekbc-ijea |   1728 |  6912 |    24 | 1.00 | 1.00 |      41.3 |        41.5 
+       abc-bk-akc |    144 | 18432 |   128 | 1.00 | 1.00 |      43.8 |        43.9 
+
+=== c64 ===
+             case |      m |     n |     k | regA | regB | plan GF/s | packed GF/s 
+------------------+--------+-------+-------+------+------+-----------+-------------
+         ij-ik-kj |   1464 |  1448 |  1464 | 1.00 | 1.00 |      48.9 |        48.9 
+       ij-ikl-ljk |    144 |   128 | 18432 | 1.00 | 1.00 |      41.9 |        41.8 
+       ij-kil-lkj |    144 |   128 | 20736 | 1.00 | 1.00 |      40.1 |        40.2 
+       ijk-ikl-lj |  18432 |   128 |   144 | 1.00 | 1.00 |      45.6 |        45.4 
+       ijk-il-jlk |    144 | 18432 |   128 | 1.00 | 1.00 |      47.1 |        47.0 
+       ijk-ilk-jl |  18432 |   144 |   128 | 1.00 | 1.00 |      47.3 |        47.3 
+       ijk-ilk-lj |  18432 |   128 |   144 | 1.00 | 1.00 |      46.0 |        45.8 
+     ijk-ilmk-mjl |   1920 |    40 |  1920 | 1.00 | 1.00 |      38.5 |        38.5 
+   ijkl-imjn-lnkm |   1920 |  1920 |  1600 | 1.00 | 0.90 |      48.5 |        48.4 
+   ijkl-imjn-nlmk |   1920 |  1600 |  1920 | 1.00 | 0.90 |      48.4 |        48.4 
+   ijkl-imkn-jnlm |   1920 |  1920 |  1600 | 1.00 | 1.00 |      48.2 |        48.1 
+   ijkl-imkn-njml |   1920 |  1600 |  1920 | 1.00 | 0.90 |      48.0 |        48.0 
+   ijkl-imln-jnkm |   1920 |  1920 |  1600 | 1.00 | 1.00 |      48.3 |        48.2 
+   ijkl-imln-njmk |   1920 |  1600 |  1920 | 1.00 | 0.90 |      48.0 |        48.1 
+   ijkl-imnj-nlkm |   1920 |  1600 |  1920 | 1.00 | 0.90 |      48.4 |        48.4 
+   ijkl-imnk-njml |   1920 |  1600 |  1920 | 1.00 | 0.90 |      48.0 |        48.0 
+   ijkl-minj-nlmk |   1920 |  1600 |  2304 | 1.00 | 0.90 |      48.0 |        48.0 
+   ijkl-mink-jnlm |   1920 |  1920 |  1920 | 1.00 | 1.00 |      48.0 |        48.1 
+   ijkl-minl-njmk |   1920 |  1600 |  2304 | 1.00 | 0.90 |      47.9 |        47.9 
+     aqrs-pa-pqrs |     48 | 64000 |    48 | 1.00 | 1.00 |      37.6 |        37.7 
+     abrs-qb-aqrs |     40 | 76800 |    48 | 1.00 | 1.00 |      35.4 |        35.3 
+     abcs-rc-abrs |     40 | 76800 |    48 | 1.00 | 1.00 |      37.2 |        37.1 
+       abj-bka-kj |  20736 |   128 |   144 | 1.00 | 1.00 |      42.1 |        42.2 
+       ajb-kba-jk |  18432 |   144 |   144 | 1.00 | 1.00 |      47.6 |        47.6 
+     abjc-cbka-kj |  92160 |    40 |    48 | 1.00 | 1.00 |      21.5 |        21.5 
+     ajbc-ckba-jk |  92160 |    48 |    40 | 1.00 | 1.00 |      29.0 |        29.0 
+     abjc-kbac-jk |  76800 |    48 |    48 | 1.00 | 1.00 |      36.0 |        35.7 
+   abjcd-dkbac-jk | 230400 |    24 |    20 | 0.67 | 1.00 |      20.5 |        20.6 
+   adbjc-cbdka-kj | 230400 |    20 |    24 | 0.67 | 1.00 |      12.6 |        12.7 
+   ajbdc-ckbad-jk | 230400 |    24 |    20 | 1.00 | 1.00 |      20.7 |        20.7 
+ abcijk-ijma-mkbc |   6912 |  1728 |    24 | 1.00 | 1.00 |      42.1 |        42.1 
+ abcijk-ijmb-mkac |   3456 |  3456 |    24 | 1.00 | 1.00 |      42.6 |        42.6 
+ abcijk-ijmc-mkab |   3456 |  3456 |    24 | 1.00 | 1.00 |      42.3 |        42.4 
+ abcijk-ikma-mjbc |   6912 |  1728 |    24 | 1.00 | 1.00 |      42.1 |        42.1 
+ abcijk-ikmb-mjac |   3456 |  3456 |    24 | 1.00 | 1.00 |      42.8 |        42.8 
+ abcijk-ikmc-mjab |   3456 |  3456 |    24 | 1.00 | 1.00 |      42.3 |        42.4 
+ abcijk-jkma-mibc |   6912 |  1728 |    24 | 1.00 | 1.00 |      42.1 |        42.1 
+ abcijk-jkmb-miac |   3456 |  3456 |    24 | 1.00 | 1.00 |      42.8 |        42.8 
+ abcijk-jkmc-miab |   3456 |  3456 |    24 | 1.00 | 1.00 |      42.1 |        42.2 
+ abcijk-eiab-jkec |   3456 |  3456 |    24 | 1.00 | 1.00 |      42.1 |        42.1 
+ abcijk-eiac-jkeb |   3456 |  3456 |    24 | 1.00 | 1.00 |      42.8 |        42.8 
+ abcijk-eibc-jkea |   1728 |  6912 |    24 | 1.00 | 1.00 |      42.1 |        42.1 
+ abcijk-ejab-ikec |   3456 |  3456 |    24 | 1.00 | 1.00 |      42.4 |        42.4 
+ abcijk-ejac-ikeb |   3456 |  3456 |    24 | 1.00 | 1.00 |      42.9 |        42.8 
+ abcijk-ejbc-ikea |   1728 |  6912 |    24 | 1.00 | 1.00 |      42.1 |        42.1 
+ abcijk-ekab-ijec |   3456 |  3456 |    24 | 1.00 | 1.00 |      42.4 |        42.4 
+ abcijk-ekac-ijeb |   3456 |  3456 |    24 | 1.00 | 1.00 |      42.7 |        42.6 
+ abcijk-ekbc-ijea |   1728 |  6912 |    24 | 1.00 | 1.00 |      42.2 |        42.2 
+       abc-bk-akc |    144 | 18432 |   128 | 1.00 | 1.00 |      47.6 |        47.6 
+
+=== complex efficiency ratio (c64 GF/s over f64 GF/s; 1.0 = no penalty) ===
+             case | plan c64/f64 | packed c64/f64 
+------------------+--------------+----------------
+         ij-ik-kj |        1.071 |          1.020 
+       ij-ikl-ljk |        1.087 |          1.089 
+       ij-kil-lkj |        1.131 |          1.130 
+       ijk-ikl-lj |        1.051 |          1.047 
+       ijk-il-jlk |        1.190 |          1.197 
+       ijk-ilk-jl |        1.073 |          1.068 
+       ijk-ilk-lj |        1.050 |          1.051 
+     ijk-ilmk-mjl |        0.974 |          0.980 
+   ijkl-imjn-lnkm |        1.038 |          1.037 
+   ijkl-imjn-nlmk |        1.045 |          1.045 
+   ijkl-imkn-jnlm |        1.033 |          1.030 
+   ijkl-imkn-njml |        1.022 |          1.022 
+   ijkl-imln-jnkm |        1.024 |          1.023 
+   ijkl-imln-njmk |        1.020 |          1.021 
+   ijkl-imnj-nlkm |        1.039 |          1.042 
+   ijkl-imnk-njml |        1.017 |          1.013 
+   ijkl-minj-nlmk |        1.051 |          1.052 
+   ijkl-mink-jnlm |        1.031 |          1.031 
+   ijkl-minl-njmk |        1.021 |          1.019 
+     aqrs-pa-pqrs |        0.991 |          1.177 
+     abrs-qb-aqrs |        1.015 |          1.010 
+     abcs-rc-abrs |        1.225 |          1.226 
+       abj-bka-kj |        1.077 |          1.107 
+       ajb-kba-jk |        1.133 |          1.134 
+     abjc-cbka-kj |        2.017 |          2.028 
+     ajbc-ckba-jk |        1.611 |          1.610 
+     abjc-kbac-jk |        1.322 |          1.297 
+   abjcd-dkbac-jk |        1.579 |          1.578 
+   adbjc-cbdka-kj |        2.305 |          2.328 
+   ajbdc-ckbad-jk |        1.587 |          1.589 
+ abcijk-ijma-mkbc |        1.015 |          1.015 
+ abcijk-ijmb-mkac |        1.042 |          1.032 
+ abcijk-ijmc-mkab |        1.087 |          1.086 
+ abcijk-ikma-mjbc |        1.017 |          1.019 
+ abcijk-ikmb-mjac |        1.051 |          1.043 
+ abcijk-ikmc-mjab |        1.090 |          1.092 
+ abcijk-jkma-mibc |        1.009 |          1.009 
+ abcijk-jkmb-miac |        1.049 |          1.042 
+ abcijk-jkmc-miab |        1.093 |          1.092 
+ abcijk-eiab-jkec |        1.089 |          1.087 
+ abcijk-eiac-jkeb |        1.038 |          1.043 
+ abcijk-eibc-jkea |        1.009 |          1.009 
+ abcijk-ejab-ikec |        1.085 |          1.087 
+ abcijk-ejac-ikeb |        1.045 |          1.039 
+ abcijk-ejbc-ikea |        1.019 |          1.021 
+ abcijk-ekab-ijec |        1.083 |          1.083 
+ abcijk-ekac-ijeb |        1.040 |          1.030 
+ abcijk-ekbc-ijea |        1.021 |          1.017 
+       abc-bk-akc |        1.087 |          1.085 
+             MEAN |        1.139 |          1.141 
+
+wrote /home/shinaoka/projects/tensor4all/tprims-benchmark/data/results/zen5-cpu/tcbench/20261009T212002Z/run0-16m-1t.csv

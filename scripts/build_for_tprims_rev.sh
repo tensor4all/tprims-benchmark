@@ -42,9 +42,11 @@ bin_args=(); for bin in "${BINS[@]}"; do bin_args+=(--bin "$bin"); done
 profile_flag=(); subdir=debug
 if [[ "$profile" == release ]]; then profile_flag=(--release); subdir=release; fi
 
-FEATURES="${BENCH_FEATURES:-upstream}"
+FEATURES="${BENCH_FEATURES:-}"
+# An empty feature list must not become `--features ""`, which cargo rejects.
+feature_flag=(); [[ -n "$FEATURES" ]] && feature_flag=(--features "$FEATURES")
 RUSTC_WRAPPER= CARGO_TARGET_DIR="$target" cargo build --manifest-path "$MANIFEST" \
-    "${profile_flag[@]}" --features "$FEATURES" "${bin_args[@]}" >&2
+    "${profile_flag[@]}" "${feature_flag[@]}" "${bin_args[@]}" >&2
 
 bin_dir="$target/$subdir"
 {

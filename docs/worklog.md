@@ -80,8 +80,12 @@ recording a smoke run and noticing it was indistinguishable from the full one.
   another declared suite. Until then, the TCCG corpus is the only workload, and
   it has a known blind spot: all 49 cases have unit batch extent, so
   per-batch-element cost is invisible in it.
-- **Only one profile has been measured.** `zen5-cpu`. `epyc-cpu` is declared as
-  optional and shows as `missing`, which is the intended presentation.
+- **The campaign is one host again, deliberately.** `epyc-cpu` was declared from the
+  first commit as the second profile, an old shared 64-core workstation used for spot
+  checks, and it was never measured: the cell would cost a full run on a machine whose
+  load the campaign does not control. It is retired (2026-10-09) rather than left as a
+  permanent `missing` row. A future machine is a new profile with its own name and its
+  own L3 description, not a revival of this one.
 - **`tprims.version` is recorded as null.** `tprims-rs` is unpublished; the field
   exists so a versioned project's pages are keyed by version as well as commit.
 - **TBLIS is retired from the declaration.** It was the third-party reference arm,
@@ -172,3 +176,41 @@ the first cell in this repository whose manifest's priming and guard are read
 back from the run. What that cell does *not* establish: it is a single complete
 set (`aa: 1`), so it carries no A/A, and the retired TBLIS column in the older
 page stays as measured.
+
+## 2026-10-09 the campaign loses its third arm, its third width and its second size
+
+Four retirements, all of them about paying twice for the same answer.
+
+- **TBLIS is retired** (`tcbench`'s fourth arm; the declaration change is the
+  `2026-10-09` commit "declaration: retire the TBLIS arm", and the harness followed).
+  It was the third-party reference, but it needed an external install and an
+  unpublished local revision to say what it measured. It comes back pinned by release
+  tag for the per-shape suite, where an independent reference earns its place, and not
+  for `tcbench`.
+- **The `upstream` arm (tensorprimitives-rs) is retired everywhere**, code and Cargo
+  feature with it. It is the project this library was extracted from, so it is a
+  lineage baseline rather than an independent one, and the measured cells say it
+  nearly always loses: on the per-shape corpus `tprims [plan]` is ahead in 42 of 42
+  rows, and on the TCCG corpus in 283 of 294. The exceptions are small and are recorded
+  rather than hidden: `ij-ik-kj` at 1T, where the planner takes 1.26x the upstream time,
+  and twelve more rows within 1.15x. Losing the arm loses the only external comparison
+  `tcbench` had; the per-shape suite keeps TBLIS for that.
+- **`tcbench` is measured at one size, two widths and two arms** (`tprims [plan]`,
+  `tprims [packed]`). Its 49 rank-3-to-6 contractions are the only irregular-stride
+  work in the campaign, so the corpus stays; the 8-thread width, the 1 MiB size and the
+  third arm each cost about a third of a run to answer a question another row already
+  answers. The first cell under the old declaration took 30 minutes
+  (`20261009T080245Z`: 08:02:45 to 08:32:16), of which 7.4 minutes was priming and
+  42 seconds one `verify` at 16 MiB; the reduced cell is a few minutes.
+- **`lukas` is renamed `per-shape`.** The suite was named after the person whose figure
+  it reconstructs, which is not what an identifier is for: the corpus's own property is
+  that its cases *are* the shapes, one size each. The attribution stays where provenance
+  belongs, in the suite's `corpus.source` field, `experiments/three-engine-contract/`
+  and the harness's own documentation.
+
+Engine columns are now labelled for a reader (`tprims [plan]`, `tprims [packed]`,
+`tblis`) while the CSVs keep the machine-readable ids (`plan`, `packed`, `tblis`): a
+suite declares the label, `report_run.py` prints it, and nothing about the data
+changes. The old `lukas` page and its raw run are removed rather than orphaned — the
+suite id no longer exists, so no index would reference them, and the commit that
+created them keeps their history.

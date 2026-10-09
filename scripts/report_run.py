@@ -72,12 +72,13 @@ def render(manifest, suite, rows, run_dir, root, providers):
     out += [
         f"- **Engines** — one row per engine in every table below:",
     ]
+    label = lambda e: (suite["engines_doc"].get(e) or {}).get("label", e)
     for engine in engines:
         doc = suite["engines_doc"].get(engine)
         if doc is None:
-            out.append(f"  - `{engine}` — (undocumented in the suite declaration)")
+            out.append(f"  - `{label(engine)}` — (undocumented in the suite declaration)")
             continue
-        out.append(f"  - `{engine}` — {doc['summary']}")
+        out.append(f"  - `{label(engine)}` — {doc['summary']}")
         # Prefer the identity recorded in *this run's* manifest over the suite's
         # generic sentence: a page should state what it actually measured.
         prov = providers.get(doc.get("provider"))
@@ -142,7 +143,7 @@ def render(manifest, suite, rows, run_dir, root, providers):
                 out.append(f"## {heading}, {dtype}, {threads}T "
                            f"(CPU {manifest['threads']['cpu_sets'].get(str(threads), '?')})")
                 out.append("")
-                header = "| case | " + " | ".join(f"{e} (ms)" for e in engines) + " |"
+                header = "| case | " + " | ".join(f"{label(e)} (ms)" for e in engines) + " |"
                 out.append(header)
                 out.append("|" + "---|" * (len(engines) + 1))
                 for case in sorted({r["case"] for r in group}):

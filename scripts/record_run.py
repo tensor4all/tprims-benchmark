@@ -87,7 +87,6 @@ def host_info(profile_name, profiles):
 PROVIDER_OF_ENGINE = {
     "plan": "tprims",
     "packed": "tprims",
-    "upstream": "upstream-tensorprimitives",
     "tblis": "tblis",
     "ttgt": "openblas",
     "blas": "openblas",
@@ -119,10 +118,6 @@ def providers_for(engines):
     if "tprims" in names:
         out.append({"name": "tprims", "version": None, "commit": None, "path": None,
                     "note": "the measured revision itself; see tprims above"})
-    if "upstream-tensorprimitives" in names:
-        out.append({"name": "upstream-tensorprimitives", "version": None,
-                    "commit": "8cda75e11ed26f46c0c22f9629004c84dbabc8e5", "path": None,
-                    "note": "lkdvos/tensorprimitives-rs, called through a Cargo git dependency"})
     if "tblis" in names:
         root, fields = tblis_identity()
         if not root or not fields.get("commit"):
@@ -228,7 +223,9 @@ def main():
     # The harness the suite runs, built from the same checkout as the library it
     # measures. `tcbench` unless the suite says otherwise.
     runner = suite.get("runner", "tcbench")
-    features = suite.get("features", ["upstream"])
+    # No implicit features: a suite that measures only this library's own arms
+    # declares an empty list, and nothing else is built into the harness.
+    features = suite.get("features", [])
     jobs = args.jobs or max(1, (os.cpu_count() or 4) // 4)
     pin = build(checkout, runner, features, jobs)
     rev, dirty = pin["TPRIMS_REV"], pin["TPRIMS_DIRTY"] == "true"
