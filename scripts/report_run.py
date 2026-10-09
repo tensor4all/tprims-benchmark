@@ -26,10 +26,13 @@ def read_rows(csv_paths):
     """
     rows = []
     for p in csv_paths:
-        stem = pathlib.Path(p).stem  # run0-16m-8t
+        stem = pathlib.Path(p).stem  # run0-16m-8t, or run0-fixed-8t
         try:
             parts = stem.split("-")
-            size_mib = float(parts[-2].rstrip("m"))
+            token = parts[-2]
+            # A suite whose corpus has fixed shapes runs with no --size at all, so
+            # the file name says `fixed` where a sized one carries `<n>m`.
+            size_mib = None if token == "fixed" else float(token.rstrip("m"))
         except (ValueError, IndexError):
             raise SystemExit(f"cannot read the nominal size from {p}")
         with open(p) as f:
@@ -93,9 +96,17 @@ def render(manifest, suite, rows, run_dir, root, providers):
         if doc.get("caveat"):
             out.append(f"    Caveat: {doc['caveat']}")
     out += [
-        f"- **Sizes** — the nominal tensor size per case in MiB. TCCG's sizing rule scales",
-        f"  every extent of a case from it, so the same case at 1 MiB and 16 MiB has the",
-        f"  same shape structure at different magnitudes.",
+        *(
+            f"- **Shapes** — the corpus has fixed shapes, so there is no nominal-size knob "
+            f"and the runner is given no `--size`; each table below is one dtype and thread "
+            f"count over the whole corpus.".splitlines()
+            if not size_mib
+            else [
+                f"- **Sizes** — the nominal tensor size per case in MiB. TCCG's sizing rule scales",
+                f"  every extent of a case from it, so the same case at 1 MiB and 16 MiB has the",
+                f"  same shape structure at different magnitudes.",
+            ]
+        ),
         f"- **dtypes** — `f64` is a real double, `c64` a complex double. The complex rows",
         f"  are the harder case for this library and are never likelier to look good.",
         f"- **Numbers** — milliseconds, best wall time per case and engine. See the timing",
@@ -119,15 +130,16 @@ def render(manifest, suite, rows, run_dir, root, providers):
         + " of the best wall time per engine.",
         "",
     ]
-    for size in size_mib:
+    for size in (size_mib or [None]):
         for dtype in dtypes:
             for threads in counts:
                 group = [r for r in rows
-                         if float(r["size_mib"]) == float(size)
+                         if (size is None or float(r["size_mib"]) == float(size))
                          and r["dtype"] == dtype and int(r["threads"]) == threads]
                 if not group:
                     continue
-                out.append(f"## {size} MiB, {dtype}, {threads}T "
+                heading = "fixed shapes" if size is None else f"{size} MiB"
+                out.append(f"## {heading}, {dtype}, {threads}T "
                            f"(CPU {manifest['threads']['cpu_sets'].get(str(threads), '?')})")
                 out.append("")
                 header = "| case | " + " | ".join(f"{e} (ms)" for e in engines) + " |"

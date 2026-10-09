@@ -38,7 +38,13 @@ It records:
   and the harness output the priming was read from. The guard expands the declared
   CPUs with the SMT siblings their physical cores share, so a busy sibling fails the
   gate instead of sharing the measured core invisibly;
-- `run_spec`: what this run covered, and whether that is the whole declaration.
+- `run_spec`: what this run covered, and whether that is the whole declaration. For a
+  corpus with **fixed shapes** the suite declares `fixed_shapes: true` instead of
+  `sizes_mib`, the runner is given no `--size`, and `sizes_mib` is empty: the size
+  axis of the campaign does not apply to it;
+- `providers[].tag` and `providers[].sha256`: the version tag a provider was pinned
+  to, and the hash of the artifact that was linked, for a provider whose revision
+  cannot be read out of the binary (a built C library, for example). Both optional.
 
 ## Index and staleness
 

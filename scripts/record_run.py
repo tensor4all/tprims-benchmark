@@ -96,7 +96,8 @@ def tblis_identity():
                     k, _, v = line.partition("=")
                     fields[k.strip()] = v.strip()
     for key, env in (("version", "TBLIS_VERSION"), ("commit", "TBLIS_COMMIT"),
-                     ("blis_commit", "TBLIS_BLIS_COMMIT"), ("config", "TBLIS_CONFIG")):
+                     ("blis_commit", "TBLIS_BLIS_COMMIT"), ("config", "TBLIS_CONFIG"),
+                     ("tag", "TBLIS_TAG"), ("sha256", "TBLIS_SHA256")):
         if env in os.environ and not fields.get(key):
             fields[key] = os.environ[env]
     return root, fields
@@ -123,8 +124,20 @@ def providers_for(engines):
         note = f"TBLIS {fields.get('version', '?')}, configuration {fields.get('config', '?')}"
         if fields.get("blis_commit"):
             note += f"; bundled BLIS {fields['blis_commit']}"
-        out.append({"name": "tblis", "version": fields.get("version"), "commit": fields["commit"],
-                    "path": root, "note": note})
+        if fields.get("build"):
+            note += f"; built with {fields['build']}"
+        if fields.get("sha256"):
+            note += f"; libtblis.so sha256 {fields['sha256'][:16]}"
+        entry = {"name": "tblis", "version": fields.get("version"), "commit": fields["commit"],
+                 "path": root, "note": note}
+        # A tag says which release a build came from, and a hash says which bytes
+        # were linked; a commit alone says neither of those things for a built
+        # native library. Both are optional so an older PROVENANCE still records.
+        if fields.get("tag"):
+            entry["tag"] = fields["tag"]
+        if fields.get("sha256"):
+            entry["sha256"] = fields["sha256"]
+        out.append(entry)
     return out
 
 
@@ -175,11 +188,26 @@ def main():
     profiles = yaml.safe_load((ROOT / "benchmarks/profiles.yaml").read_text())["profiles"]
     suite = yaml.safe_load((ROOT / "benchmarks/suites" / f"{args.suite_id}.yaml").read_text())
     spec = suite["runs"][0]
-    sizes = [float(s) for s in args.sizes.split(",")] if args.sizes else spec["sizes_mib"]
+    fixed_shapes = bool(spec.get("fixed_shapes"))
+    declared_sizes = spec.get("sizes_mib", [])
+    if fixed_shapes and declared_sizes:
+        sys.exit("ERROR: the suite declares fixed_shapes, so it must not declare sizes_mib")
+    if fixed_shapes and args.sizes:
+        sys.exit("ERROR: this suite's corpus has fixed shapes; --sizes does not apply to it")
+    sizes = [float(s) for s in args.sizes.split(",")] if args.sizes else declared_sizes
+    if not sizes and not fixed_shapes:
+        sys.exit("ERROR: the suite declares neither sizes_mib nor fixed_shapes")
     threads = [int(t) for t in args.threads.split(",")] if args.threads else spec["threads"]
     dtypes = args.dtypes.split(",") if args.dtypes else spec["dtypes"]
     engines = args.engines.split(",") if args.engines else spec["engines"]
     cpu_sets = {str(t): spec["cpu_sets"][spec["threads"].index(t)] for t in threads}
+
+    def size_arg(size):
+        """`--size` for a sized corpus; nothing at all for a fixed-shape one."""
+        return [] if size is None else ["--size", f"{size:g}"]
+
+    def size_label(size):
+        return "fixed" if size is None else f"{size:g}m"
 
     checkout = pathlib.Path(args.checkout)
     if (checkout / ".git").exists() and checkout.resolve() != (ROOT / "extern/tprims-rs").resolve():
@@ -209,35 +237,35 @@ def main():
 
     guards = []
     # 1. correctness first, at every budget, for the whole corpus.
-    for size in sizes:
+    for size in sizes or [None]:
         for t in threads:
-            out = run_dir / f"verify-{size:g}m-{t}t.txt"
-            guard = run_dir / f"verify-{size:g}m-{t}t.guard"
+            out = run_dir / f"verify-{size_label(size)}-{t}t.txt"
+            guard = run_dir / f"verify-{size_label(size)}-{t}t.guard"
             r = subprocess.run([str(pinned), cpu_sets[str(t)], "--", str(tcbench), "verify",
-                                "--threads", str(t), "--size", str(size),
-                                "--dtype", ",".join(dtypes)],
+                                "--threads", str(t)] + size_arg(size)
+                               + ["--dtype", ",".join(dtypes)],
                                env=env, capture_output=True, text=True)
             out.write_text(r.stdout)
             guard.write_text(r.stderr)
             guards.append(str(guard.relative_to(run_dir)))
             if r.returncode != 0 or "MISMATCH" in r.stdout:
-                sys.exit(f"ERROR: verify failed for {size} MiB {t}T (see {out}); nothing published")
+                sys.exit(f"ERROR: verify failed for {size_label(size)} {t}T (see {out}); nothing published")
             if "all comparisons within tolerance" not in r.stdout:
-                sys.exit(f"ERROR: verify did not report a clean corpus for {size} MiB {t}T")
+                sys.exit(f"ERROR: verify did not report a clean corpus for {size_label(size)} {t}T")
 
     # 2. timing, one CSV per (repeat, size, threads).
     csvs = []
     outputs = []
     policies = []
     for rep in range(args.aa):
-        for size in sizes:
+        for size in sizes or [None]:
             for t in threads:
-                stem = run_dir / f"run{rep}-{size:g}m-{t}t"
+                stem = run_dir / f"run{rep}-{size_label(size)}-{t}t"
                 r = subprocess.run([str(pinned), cpu_sets[str(t)], "--", str(tcbench), "run",
-                                    "--threads", str(t), "--size", str(size),
-                                    "--dtype", ",".join(dtypes), "--engines", ",".join(engines),
-                                    "--reps", str(args.reps), "--prime-ms", str(args.prime_ms),
-                                    "--csv", str(stem) + ".csv"],
+                                    "--threads", str(t)] + size_arg(size)
+                                   + ["--dtype", ",".join(dtypes), "--engines", ",".join(engines),
+                                      "--reps", str(args.reps), "--prime-ms", str(args.prime_ms),
+                                      "--csv", str(stem) + ".csv"],
                                    env=env, capture_output=True, text=True)
                 # The harness's own stdout is kept: it is what makes the manifest's
                 # priming claim checkable rather than assumed.
@@ -246,11 +274,11 @@ def main():
                 outputs.append(f"run{rep}-{size:g}m-{t}t.out")
                 guards.append(f"run{rep}-{size:g}m-{t}t.guard")
                 if r.returncode != 0:
-                    sys.exit(f"ERROR: run failed for {size} MiB {t}T (repeat {rep})")
+                    sys.exit(f"ERROR: run failed for {size_label(size)} {t}T (repeat {rep})")
                 if not (pathlib.Path(str(stem) + ".csv")).exists():
-                    sys.exit(f"ERROR: no CSV produced for {size} MiB {t}T")
+                    sys.exit(f"ERROR: no CSV produced for {size_label(size)} {t}T")
                 csvs.append(str(stem) + ".csv")
-                policies.append(harness_policy(r.stdout, r.stderr, f"{size:g} MiB {t}T"))
+                policies.append(harness_policy(r.stdout, r.stderr, f"{size_label(size)} {t}T"))
     policy = policies[0]
     for other in policies[1:]:
         if other != policy:
@@ -306,8 +334,9 @@ def main():
         "providers": providers_for(engines),
         "invalidated_by": suite["invalidated_by"],
         "result_files": [str(pathlib.Path(c).relative_to(run_dir)) for c in csvs],
-        "run_spec": {"sizes_mib": sizes, "dtypes": dtypes, "engines": engines, "aa": args.aa,
-                      "covers_declared_suite": (sizes == spec["sizes_mib"]
+        "run_spec": {"sizes_mib": sizes, "fixed_shapes": fixed_shapes,
+                      "dtypes": dtypes, "engines": engines, "aa": args.aa,
+                      "covers_declared_suite": (sizes == declared_sizes
                                                 and threads == spec["threads"]
                                                 and dtypes == spec["dtypes"]
                                                 and engines == spec["engines"])},
