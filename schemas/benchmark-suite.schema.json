@@ -189,6 +189,10 @@
           }
         }
       }
+    },
+    "runner": {
+      "type": "string",
+      "description": "The harness binary in the measured checkout that this suite runs, built and invoked from the same checkout as the library. Defaults to `tcbench`."
     }
   }
 }
