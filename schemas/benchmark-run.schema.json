@@ -288,6 +288,17 @@
           "items": {
             "type": "string"
           }
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "the harness timing stdout kept per run, whose priming banner the recorder reads"
+        },
+        "notes": {
+          "type": "string",
+          "description": "what the guard covered beyond the declared CPU set"
         }
       }
     },

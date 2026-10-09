@@ -19,6 +19,7 @@ import json
 import os
 import pathlib
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -127,12 +128,42 @@ def providers_for(engines):
     return out
 
 
+PRIMING_RE = re.compile(r"(\d+) ms priming")
+GUARD_POLICY_RE = re.compile(r"idle_window=(\d+)s max_busy=([0-9.]+) retries=(\d+)")
+
+
+def harness_policy(stdout: str, stderr: str, label: str) -> dict:
+    """What the harness and the guard report they did, refused rather than assumed.
+
+    `--prime-ms` and the `PINNED_*` overrides can disagree with the defaults this
+    script would otherwise write, and a manifest that states the default in that
+    case is a wrong claim about a real run. Both lines come from the measured
+    checkout, so a manifest that disagrees with them cannot be published.
+    """
+    priming = PRIMING_RE.search(stdout)
+    if not priming:
+        sys.exit(f"ERROR: {label}: no priming banner in the timing output. The measured\n"
+                 "checkout predates tprims-rs#78; bump pins/tprims-rs.rev.")
+    guard = GUARD_POLICY_RE.search(stderr)
+    if not guard:
+        sys.exit(f"ERROR: {label}: no guard policy line in the guard log. The measured\n"
+                 "checkout predates tprims-rs#79; bump pins/tprims-rs.rev.")
+    return {
+        "prime_ms": int(priming.group(1)),
+        "idle_window_seconds": int(guard.group(1)),
+        "max_busy_percent": round(float(guard.group(2)) * 100),
+        "attempts": int(guard.group(3)),
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("profile")
     ap.add_argument("suite_id")
     ap.add_argument("--checkout", default=str(ROOT / "extern/tprims-rs"))
     ap.add_argument("--reps", type=int, default=5)
+    ap.add_argument("--prime-ms", type=int, default=500,
+                    help="untimed time-based priming per arm; recorded as the harness reports it")
     ap.add_argument("--aa", type=int, default=1, help="number of complete set repeats (>=2 gives A/A)")
     ap.add_argument("--sizes", default=None, help="override, comma separated MiB")
     ap.add_argument("--threads", default=None, help="override, comma separated")
@@ -196,6 +227,8 @@ def main():
 
     # 2. timing, one CSV per (repeat, size, threads).
     csvs = []
+    outputs = []
+    policies = []
     for rep in range(args.aa):
         for size in sizes:
             for t in threads:
@@ -203,15 +236,25 @@ def main():
                 r = subprocess.run([str(pinned), cpu_sets[str(t)], "--", str(tcbench), "run",
                                     "--threads", str(t), "--size", str(size),
                                     "--dtype", ",".join(dtypes), "--engines", ",".join(engines),
-                                    "--reps", str(args.reps), "--csv", str(stem) + ".csv"],
+                                    "--reps", str(args.reps), "--prime-ms", str(args.prime_ms),
+                                    "--csv", str(stem) + ".csv"],
                                    env=env, capture_output=True, text=True)
+                # The harness's own stdout is kept: it is what makes the manifest's
+                # priming claim checkable rather than assumed.
+                (run_dir / f"run{rep}-{size:g}m-{t}t.out").write_text(r.stdout)
                 (run_dir / f"run{rep}-{size:g}m-{t}t.guard").write_text(r.stderr)
+                outputs.append(f"run{rep}-{size:g}m-{t}t.out")
                 guards.append(f"run{rep}-{size:g}m-{t}t.guard")
                 if r.returncode != 0:
                     sys.exit(f"ERROR: run failed for {size} MiB {t}T (repeat {rep})")
                 if not (pathlib.Path(str(stem) + ".csv")).exists():
                     sys.exit(f"ERROR: no CSV produced for {size} MiB {t}T")
                 csvs.append(str(stem) + ".csv")
+                policies.append(harness_policy(r.stdout, r.stderr, f"{size:g} MiB {t}T"))
+    policy = policies[0]
+    for other in policies[1:]:
+        if other != policy:
+            sys.exit(f"ERROR: the harness reported different policy between runs: {policy} then {other}")
 
     manifest = {
         "schema_version": 1,
@@ -243,18 +286,22 @@ def main():
         },
         "timing_policy": {
             "version": 1,
-            "minimum_untimed_priming_ms": 500,
+            "minimum_untimed_priming_ms": policy["prime_ms"],
             "statistic": "best",
             "repetitions": args.reps,
             "notes": "priming is time-based, not a call count: after an idle gate this host "
-                     "reports up to 25% low for the first 1-2 s of sustained work",
+                     "reports up to 25% low for the first 1-2 s of sustained work. The value is "
+                     "the one the harness reported, not the one this script asked for",
         },
         "guard": None,
         "guards": {
-            "idle_window_seconds": 3,
-            "max_busy_percent": 5,
-            "attempts": 3,
+            "idle_window_seconds": policy["idle_window_seconds"],
+            "max_busy_percent": policy["max_busy_percent"],
+            "attempts": policy["attempts"],
             "logs": sorted(set(guards)),
+            "outputs": sorted(set(outputs)),
+            "notes": "the CPU set is checked together with the SMT siblings its physical "
+                     "cores share, so a busy sibling fails the gate",
         },
         "providers": providers_for(engines),
         "invalidated_by": suite["invalidated_by"],

@@ -30,9 +30,14 @@ It records:
 - `host`: CPU, logical CPU count, OS, arch, L3 geometry;
 - `threads`: the counts, the CPU set used for each, and the thread environment
   variables in force;
-- `timing_policy`: version, priming, statistic, repetitions;
+- `timing_policy`: version, priming, statistic, repetitions. The priming value is the
+  one the harness reported in its banner, not the one the recorder asked for, so a
+  manifest cannot claim a policy the measured checkout did not apply;
 - `providers`: what was compared against, with versions or commits;
-- `guards`: the idle window, the busy threshold, the attempt budget, the log files;
+- `guards`: the idle window, the busy threshold, the attempt budget, the log files,
+  and the harness output the priming was read from. The guard expands the declared
+  CPUs with the SMT siblings their physical cores share, so a busy sibling fails the
+  gate instead of sharing the measured core invisibly;
 - `run_spec`: what this run covered, and whether that is the whole declaration.
 
 ## Index and staleness
