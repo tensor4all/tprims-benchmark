@@ -27,6 +27,10 @@ It records:
 - `tprims`: path, commit, dirty state, features of the checkout that was
   measured and that the harness was built from;
 - `harness`: commit and dirty state;
+- `build_jobs`: how many cargo jobs built that harness. It is not a measurement
+  condition — the threads a run measured at come from its suite, and a build never
+  overlaps a measurement — but it is recorded so a rebuild can match, and so a
+  reader is not left guessing which of the two numbers was which;
 - `host`: CPU, logical CPU count, OS, arch, L3 geometry;
 - `threads`: the counts, the CPU set used for each, and the thread environment
   variables in force;

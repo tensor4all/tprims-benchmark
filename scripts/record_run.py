@@ -40,10 +40,20 @@ def git(dir_, *args):
                           text=True, capture_output=True).stdout.strip()
 
 
-def build(checkout, runner):
+def build(checkout, runner, features, jobs):
+    """Build the harness out of the measured checkout.
+
+    Two knobs, deliberately separate: `features` decides which arms exist, and
+    `jobs` how many cores the *build* may use. Neither has anything to do with the
+    thread count the measurement runs at, which the suite declares.
+    """
     env_file = ROOT / "target/pin.env"
     env_file.parent.mkdir(parents=True, exist_ok=True)
-    sh([ROOT / "scripts/build_for_tprims_rev.sh", checkout, env_file, runner])
+    build_env = dict(os.environ)
+    build_env["BENCH_FEATURES"] = ",".join(features)
+    build_env["CARGO_BUILD_JOBS"] = str(jobs)
+    sh([ROOT / "scripts/build_for_tprims_rev.sh", checkout, env_file, runner],
+       env=build_env)
     pin = {}
     for line in env_file.read_text().splitlines():
         if "=" in line:
@@ -178,6 +188,9 @@ def main():
     ap.add_argument("--prime-ms", type=int, default=500,
                     help="untimed time-based priming per arm; recorded as the harness reports it")
     ap.add_argument("--aa", type=int, default=1, help="number of complete set repeats (>=2 gives A/A)")
+    ap.add_argument("--jobs", type=int, default=None,
+                    help="cargo jobs for the build of the harness; independent of the thread "
+                         "counts the suite measures at (default: a quarter of the CPUs)")
     ap.add_argument("--sizes", default=None, help="override, comma separated MiB")
     ap.add_argument("--threads", default=None, help="override, comma separated")
     ap.add_argument("--dtypes", default=None)
@@ -215,7 +228,9 @@ def main():
     # The harness the suite runs, built from the same checkout as the library it
     # measures. `tcbench` unless the suite says otherwise.
     runner = suite.get("runner", "tcbench")
-    pin = build(checkout, runner)
+    features = suite.get("features", ["upstream"])
+    jobs = args.jobs or max(1, (os.cpu_count() or 4) // 4)
+    pin = build(checkout, runner, features, jobs)
     rev, dirty = pin["TPRIMS_REV"], pin["TPRIMS_DIRTY"] == "true"
     if dirty:
         print("WARNING: the measured checkout is dirty; this cell will be marked dirty", file=sys.stderr)
@@ -233,7 +248,6 @@ def main():
         sys.exit(f"ERROR: {pinned} or {idle} missing; the protocol scripts belong to the measured revision")
 
     env = dict(os.environ)
-    env.setdefault("CARGO_BUILD_JOBS", str(max(1, (os.cpu_count() or 4) // 4)))
     env["PATH"] = f"{checkout / 'benchmarks/scripts'}:{env['PATH']}"
     if "TBLIS_ROOT" in env:
         env["LD_LIBRARY_PATH"] = f"{env['TBLIS_ROOT']}/lib:{env['TBLIS_ROOT']}/lib64:" + env.get("LD_LIBRARY_PATH", "")
@@ -263,7 +277,8 @@ def main():
     for rep in range(args.aa):
         for size in sizes or [None]:
             for t in threads:
-                stem = run_dir / f"run{rep}-{size_label(size)}-{t}t"
+                label = size_label(size)
+                stem = run_dir / f"run{rep}-{label}-{t}t"
                 r = subprocess.run([str(pinned), cpu_sets[str(t)], "--", str(tcbench), "run",
                                     "--threads", str(t)] + size_arg(size)
                                    + ["--dtype", ",".join(dtypes), "--engines", ",".join(engines),
@@ -272,10 +287,10 @@ def main():
                                    env=env, capture_output=True, text=True)
                 # The harness's own stdout is kept: it is what makes the manifest's
                 # priming claim checkable rather than assumed.
-                (run_dir / f"run{rep}-{size:g}m-{t}t.out").write_text(r.stdout)
-                (run_dir / f"run{rep}-{size:g}m-{t}t.guard").write_text(r.stderr)
-                outputs.append(f"run{rep}-{size:g}m-{t}t.out")
-                guards.append(f"run{rep}-{size:g}m-{t}t.guard")
+                (run_dir / f"run{rep}-{label}-{t}t.out").write_text(r.stdout)
+                (run_dir / f"run{rep}-{label}-{t}t.guard").write_text(r.stderr)
+                outputs.append(f"run{rep}-{label}-{t}t.out")
+                guards.append(f"run{rep}-{label}-{t}t.guard")
                 if r.returncode != 0:
                     sys.exit(f"ERROR: run failed for {size_label(size)} {t}T (repeat {rep})")
                 if not (pathlib.Path(str(stem) + ".csv")).exists():
@@ -300,9 +315,12 @@ def main():
             "url": "https://github.com/tensor4all/tprims-rs",
             "commit": rev,
             "dirty": dirty,
-            "features": [f for f in pin["BUILD_FEATURES"].split(",") if f],
+            # build_for_tprims_rev.sh writes this with `printf %q`, which escapes
+            # the comma of a feature list.
+            "features": [f for f in pin["BUILD_FEATURES"].replace("\\,", ",").split(",") if f],
             "measured_path": pin["TPRIMS_DIR"],
         },
+        "build_jobs": jobs,
         "harness": {
             "commit": git(ROOT, "rev-parse", "HEAD"),
             "dirty": bool(git(ROOT, "status", "--porcelain", "--untracked-files=no")),

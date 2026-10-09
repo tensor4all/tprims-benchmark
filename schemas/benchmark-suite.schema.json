@@ -193,6 +193,13 @@
     "runner": {
       "type": "string",
       "description": "The harness binary in the measured checkout that this suite runs, built and invoked from the same checkout as the library. Defaults to `tcbench`."
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The cargo features of the measured checkout's harness this suite needs, for example `upstream` for the tensorprimitives baseline or `tblis` for the TBLIS one. The recorder builds with these and the manifest records them."
     }
   }
 }
