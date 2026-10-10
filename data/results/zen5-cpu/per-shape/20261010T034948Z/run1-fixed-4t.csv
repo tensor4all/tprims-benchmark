@@ -1,0 +1,64 @@
+case,group,dtype,engine,threads,m,n,k,macs,seconds,spread,prepare_s,gflops,regular_a,regular_b,notes
+ikb_knb_inb_n2_b16,ikb_knb_inb,f64,plan,4,32,2,2,128,0.000000481,0.0416,0.000002394,0.5322,0.0000,0.0000,faer rel_err=8.58e-17
+ikb_knb_inb_n2_b16,ikb_knb_inb,f64,packed,4,32,2,2,128,0.000001883,0.0112,0.000004268,0.1360,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=8.58e-17
+ikb_knb_inb_n2_b16,ikb_knb_inb,f64,tblis,4,32,2,2,128,0.000018444,0.0962,0.000000551,0.0139,0.0000,0.0000,rel_err=8.58e-17
+ikb_knb_inb_n4_b16,ikb_knb_inb,f64,plan,4,64,4,4,1024,0.000000642,0.0296,0.000001673,3.1900,0.0000,0.0000,faer rel_err=2.51e-16
+ikb_knb_inb_n4_b16,ikb_knb_inb,f64,packed,4,64,4,4,1024,0.000002554,0.0082,0.000004128,0.8019,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=2.51e-16
+ikb_knb_inb_n4_b16,ikb_knb_inb,f64,tblis,4,64,4,4,1024,0.000041547,0.0603,0.000000571,0.0493,0.0000,0.0000,rel_err=2.51e-16
+ikb_knb_inb_n8_b16,ikb_knb_inb,f64,plan,4,128,8,8,8192,0.000000921,0.0011,0.000001513,17.7894,0.0000,0.0000,faer rel_err=1.91e-16
+ikb_knb_inb_n8_b16,ikb_knb_inb,f64,packed,4,128,8,8,8192,0.000003837,0.0052,0.000004028,4.2700,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=1.91e-16
+ikb_knb_inb_n8_b16,ikb_knb_inb,f64,tblis,4,128,8,8,8192,0.000097973,0.0210,0.000000501,0.1672,0.0000,0.0000,rel_err=1.91e-16
+ikb_knb_inb_n16_b16,ikb_knb_inb,f64,plan,4,256,16,16,65536,0.000003717,0.0027,0.000001422,35.2628,0.0000,0.0000,faer rel_err=1.89e-16
+ikb_knb_inb_n16_b16,ikb_knb_inb,f64,packed,4,256,16,16,65536,0.000009117,0.0121,0.000004338,14.3767,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=1.89e-16
+ikb_knb_inb_n16_b16,ikb_knb_inb,f64,tblis,4,256,16,16,65536,0.000144979,0.2337,0.000000561,0.9041,0.0000,0.0000,rel_err=1.89e-16
+ikb_knb_inb_n2_b64,ikb_knb_inb,f64,plan,4,128,2,2,512,0.000001352,0.0303,0.000001763,0.7574,0.0000,0.0000,faer rel_err=1.82e-16
+ikb_knb_inb_n2_b64,ikb_knb_inb,f64,packed,4,128,2,2,512,0.000005991,0.0083,0.000004539,0.1709,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=1.82e-16
+ikb_knb_inb_n2_b64,ikb_knb_inb,f64,tblis,4,128,2,2,512,0.000061183,0.1035,0.000000531,0.0167,0.0000,0.0000,rel_err=1.82e-16
+ikb_knb_inb_n4_b64,ikb_knb_inb,f64,plan,4,256,4,4,4096,0.000002004,0.0150,0.000001654,4.0878,0.0000,0.0000,faer rel_err=2.26e-16
+ikb_knb_inb_n4_b64,ikb_knb_inb,f64,packed,4,256,4,4,4096,0.000008435,0.0203,0.000004228,0.9712,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=2.26e-16
+ikb_knb_inb_n4_b64,ikb_knb_inb,f64,tblis,4,256,4,4,4096,0.000063248,0.0451,0.000000411,0.1295,0.0000,0.0000,rel_err=2.26e-16
+ikb_knb_inb_n8_b64,ikb_knb_inb,f64,plan,4,512,8,8,32768,0.000003146,0.0127,0.000001854,20.8315,0.0000,0.0000,faer rel_err=2.69e-16
+ikb_knb_inb_n8_b64,ikb_knb_inb,f64,packed,4,512,8,8,32768,0.000014056,0.0014,0.000003978,4.6625,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=2.69e-16
+ikb_knb_inb_n8_b64,ikb_knb_inb,f64,tblis,4,512,8,8,32768,0.000160528,0.0537,0.000000421,0.4083,0.0000,0.0000,rel_err=2.69e-16
+ikb_knb_inb_n16_b64,ikb_knb_inb,f64,plan,4,1024,16,16,262144,0.000014427,0.0021,0.000001753,36.3407,0.0000,0.0000,faer rel_err=3.43e-16
+ikb_knb_inb_n16_b64,ikb_knb_inb,f64,packed,4,1024,16,16,262144,0.000034925,0.0063,0.000004548,15.0118,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=3.43e-16
+ikb_knb_inb_n16_b64,ikb_knb_inb,f64,tblis,4,1024,16,16,262144,0.000558028,0.0760,0.000000400,0.9395,0.0000,0.0000,rel_err=3.43e-16
+ikb_knb_inb_n2_b256,ikb_knb_inb,f64,plan,4,512,2,2,2048,0.000004939,0.0040,0.000002344,0.8293,0.0000,0.0000,faer rel_err=1.51e-16
+ikb_knb_inb_n2_b256,ikb_knb_inb,f64,packed,4,512,2,2,2048,0.000022081,0.0045,0.000005520,0.1855,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=1.51e-16
+ikb_knb_inb_n2_b256,ikb_knb_inb,f64,tblis,4,512,2,2,2048,0.000233834,0.0256,0.000000461,0.0175,0.0000,0.0000,rel_err=1.51e-16
+ikb_knb_inb_n4_b256,ikb_knb_inb,f64,plan,4,1024,4,4,16384,0.000007423,0.0096,0.000001894,4.4144,0.0000,0.0000,faer rel_err=1.73e-16
+ikb_knb_inb_n4_b256,ikb_knb_inb,f64,packed,4,1024,4,4,16384,0.000031719,0.0761,0.000004609,1.0331,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=1.73e-16
+ikb_knb_inb_n4_b256,ikb_knb_inb,f64,tblis,4,1024,4,4,16384,0.000236991,0.0834,0.000000420,0.1383,0.0000,0.0000,rel_err=1.73e-16
+ikb_knb_inb_n8_b256,ikb_knb_inb,f64,plan,4,2048,8,8,131072,0.000011522,0.0026,0.000001754,22.7516,0.0000,0.0000,faer rel_err=2.14e-16
+ikb_knb_inb_n8_b256,ikb_knb_inb,f64,packed,4,2048,8,8,131072,0.000055052,0.0517,0.000004789,4.7618,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=2.14e-16
+ikb_knb_inb_n8_b256,ikb_knb_inb,f64,tblis,4,2048,8,8,131072,0.000247961,0.0241,0.000000441,1.0572,0.0000,0.0000,rel_err=2.14e-16
+ikb_knb_inb_n16_b256,ikb_knb_inb,f64,plan,4,4096,16,16,1048576,0.000018054,0.0249,0.000001953,116.1600,0.0000,0.0000,faer rel_err=2.38e-16
+ikb_knb_inb_n16_b256,ikb_knb_inb,f64,packed,4,4096,16,16,1048576,0.000039063,0.0721,0.000005931,53.6864,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=2.38e-16
+ikb_knb_inb_n16_b256,ikb_knb_inb,f64,tblis,4,4096,16,16,1048576,0.000731600,0.0202,0.000000511,2.8665,0.0000,0.0000,rel_err=2.38e-16
+ijk_jkl_il_8x16x8,ijk_jkl_il,f64,plan,4,8,8,128,8192,0.000000561,0.0178,0.000001422,29.2050,0.0000,0.0000,faer rel_err=4.06e-16
+ijk_jkl_il_8x16x8,ijk_jkl_il,f64,packed,4,8,8,128,8192,0.000002855,0.0179,0.000004649,5.7387,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=4.06e-16
+ijk_jkl_il_8x16x8,ijk_jkl_il,f64,tblis,4,8,8,128,8192,0.000012733,0.0268,0.000000551,1.2867,0.0000,0.0000,rel_err=4.06e-16
+ij_jk_ik_c64_n32,ij_jk_ik,c64,plan,4,32,32,32,32768,0.000005460,0.0037,0.000002625,48.0117,0.0000,0.0000,faer rel_err=5.44e-16
+ij_jk_ik_c64_n32,ij_jk_ik,c64,packed,4,32,32,32,32768,0.000008005,0.0125,0.000007384,32.7475,0.0000,0.0000,avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=5.44e-16
+ij_jk_ik_c64_n32,ij_jk_ik,c64,tblis,4,32,32,32,32768,0.000013745,0.1953,0.000000871,19.0720,0.0000,0.0000,rel_err=5.45e-16
+ij_jk_ik_f64_n64,ij_jk_ik,f64,plan,4,64,64,64,262144,0.000010459,0.0038,0.000001834,50.1279,0.0000,0.0000,faer rel_err=2.36e-16
+ij_jk_ik_f64_n64,ij_jk_ik,f64,packed,4,64,64,64,262144,0.000014898,0.0040,0.000004879,35.1918,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=2.36e-16
+ij_jk_ik_f64_n64,ij_jk_ik,f64,tblis,4,64,64,64,262144,0.000019416,0.0207,0.000000451,27.0029,0.0000,0.0000,rel_err=2.36e-16
+ij_jk_kl_il_n64,ij_jk_kl_il,f64,plan,4,64,64,64,524288,0.000020848,0.0010,0.000003156,50.2962,0.0000,0.0000,faer rel_err=5.71e-16 steps=2 m/n/k=final-step per-step MxNxK=64x64x64x2
+ij_jk_kl_il_n64,ij_jk_kl_il,f64,packed,4,64,64,64,524288,0.000029696,0.0685,0.000009999,35.3103,0.0000,0.0000,avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=5.71e-16 steps=2 m/n/k=final-step per-step MxNxK=64x64x64x2
+ij_jk_kl_il_n64,ij_jk_kl_il,f64,tblis,4,64,64,64,524288,0.000039774,0.5174,0.000000862,26.3634,0.0000,0.0000,rel_err=5.71e-16 steps=2 m/n/k=final-step per-step MxNxK=64x64x64x2
+mps_chain_L32_chi4,mps_chain,c64,plan,4,4,4,8,8192,0.000021871,0.0407,0.000057818,2.9965,0.0000,0.0000,faer rel_err=2.16e-15 steps=64 m/n/k=final-step per-step MxNxK=4x8x4x32;4x4x8x32
+mps_chain_L32_chi4,mps_chain,c64,packed,4,4,4,8,8192,0.000046527,0.0080,0.000347856,1.4086,0.0000,0.0000,avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=1.63e-15 steps=64 m/n/k=final-step per-step MxNxK=4x8x4x32;4x4x8x32
+mps_chain_L32_chi4,mps_chain,c64,tblis,4,4,4,8,8192,0.000530557,0.0162,0.000022933,0.1235,0.0000,0.0000,rel_err=1.53e-15 steps=64 m/n/k=final-step per-step MxNxK=4x8x4x32;4x4x8x32
+mps_chain_L32_chi8,mps_chain,c64,plan,4,8,8,16,65536,0.000039514,0.0225,0.000063378,13.2684,0.0000,0.0000,faer rel_err=1.19e-15 steps=64 m/n/k=final-step per-step MxNxK=8x16x8x32;8x8x16x32
+mps_chain_L32_chi8,mps_chain,c64,packed,4,8,8,16,65536,0.000078636,0.0507,0.000353648,6.6673,0.0000,0.0000,avx512.c64.planar.16x6 16x6 BA 128x256x768 policy=auto align=false | avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=1.37e-15 steps=64 m/n/k=final-step per-step MxNxK=8x16x8x32;8x8x16x32
+mps_chain_L32_chi8,mps_chain,c64,tblis,4,8,8,16,65536,0.000685624,0.0213,0.000024125,0.7647,0.0000,0.0000,rel_err=1.40e-15 steps=64 m/n/k=final-step per-step MxNxK=8x16x8x32;8x8x16x32
+mps_chain_L32_chi16,mps_chain,c64,plan,4,16,16,32,524288,0.000104163,0.0329,0.000061494,40.2667,0.0000,0.0000,faer rel_err=2.63e-15 steps=64 m/n/k=final-step per-step MxNxK=16x32x16x32;16x16x32x32
+mps_chain_L32_chi16,mps_chain,c64,packed,4,16,16,32,524288,0.000182760,0.0201,0.000365179,22.9498,0.0000,0.0000,avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=2.66e-15 steps=64 m/n/k=final-step per-step MxNxK=16x32x16x32;16x16x32x32
+mps_chain_L32_chi16,mps_chain,c64,tblis,4,16,16,32,524288,0.000807441,0.0449,0.000024395,5.1946,0.0000,0.0000,rel_err=1.70e-15 steps=64 m/n/k=final-step per-step MxNxK=16x32x16x32;16x16x32x32
+mps_chain_L32_chi32,mps_chain,c64,plan,4,32,32,64,4194304,0.000698168,0.0044,0.000062897,48.0607,0.0000,0.0000,faer rel_err=3.21e-15 steps=64 m/n/k=final-step per-step MxNxK=32x64x32x32;32x32x64x32
+mps_chain_L32_chi32,mps_chain,c64,packed,4,32,32,64,4194304,0.000956388,0.0049,0.000366150,35.0845,0.0000,0.0000,avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=3.28e-15 steps=64 m/n/k=final-step per-step MxNxK=32x64x32x32;32x32x64x32
+mps_chain_L32_chi32,mps_chain,c64,tblis,4,32,32,64,4194304,0.001155027,0.0115,0.000024355,29.0508,0.0000,0.0000,rel_err=3.55e-15 steps=64 m/n/k=final-step per-step MxNxK=32x64x32x32;32x32x64x32
+mps_chain_L32_chi64,mps_chain,c64,plan,4,64,64,128,33554432,0.002644086,0.0447,0.000419901,101.5230,0.0000,0.0000,avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=4.41e-15 steps=64 m/n/k=final-step per-step MxNxK=64x128x64x32;64x64x128x32
+mps_chain_L32_chi64,mps_chain,c64,packed,4,64,64,128,33554432,0.002586739,0.0643,0.000415883,103.7737,0.0000,0.0000,avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=4.41e-15 steps=64 m/n/k=final-step per-step MxNxK=64x128x64x32;64x64x128x32
+mps_chain_L32_chi64,mps_chain,c64,tblis,4,64,64,128,33554432,0.003639987,0.0336,0.000027902,73.7463,0.0000,0.0000,rel_err=4.10e-15 steps=64 m/n/k=final-step per-step MxNxK=64x128x64x32;64x64x128x32

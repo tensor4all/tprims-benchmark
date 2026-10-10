@@ -1,0 +1,102 @@
+# threads: requested=1 pool=1 budget=1
+host        : shinaoka-EVO-X1Pro
+target      : x86_64 / linux
+cpu features: avx2 fma avx512f avx512dq 
+caches      : L1=48KiB/12-way/2sh L2=1024KiB/16-way/2sh L3=8192KiB/16-way/16sh (via sysfs)
+baselines   : tblis=true
+tblis       : abi 2.x, 1 thread(s)
+
+running 21 cases at fixed extents (--size is accepted and ignored: this corpus has no size knob), 5 reps, 1500 ms priming, engines=plan,packed,tblis
+
+
+=== GFLOP/s, best of 5 calls after 1500 ms priming, whole program per call ===
+                 case | dtype | steps |     macs | plan GF/s | packed GF/s | tblis GF/s 
+----------------------+-------+-------+----------+-----------+-------------+------------
+   ikb_knb_inb_n2_b16 |   f64 |     1 |      128 |       0.5 |         0.1 |        0.0 
+   ikb_knb_inb_n4_b16 |   f64 |     1 |     1024 |       3.1 |         0.8 |        0.0 
+   ikb_knb_inb_n8_b16 |   f64 |     1 |     8192 |      17.8 |         4.0 |        0.3 
+  ikb_knb_inb_n16_b16 |   f64 |     1 |    65536 |      35.0 |        14.0 |        1.8 
+   ikb_knb_inb_n2_b64 |   f64 |     1 |      512 |       0.8 |         0.2 |        0.0 
+   ikb_knb_inb_n4_b64 |   f64 |     1 |     4096 |       3.9 |         0.9 |        0.0 
+   ikb_knb_inb_n8_b64 |   f64 |     1 |    32768 |      20.4 |         4.7 |        0.3 
+  ikb_knb_inb_n16_b64 |   f64 |     1 |   262144 |      36.4 |        14.5 |        1.9 
+  ikb_knb_inb_n2_b256 |   f64 |     1 |     2048 |       0.9 |         0.2 |        0.0 
+  ikb_knb_inb_n4_b256 |   f64 |     1 |    16384 |       4.1 |         0.9 |        0.0 
+  ikb_knb_inb_n8_b256 |   f64 |     1 |   131072 |      22.2 |         4.4 |        0.3 
+ ikb_knb_inb_n16_b256 |   f64 |     1 |  1048576 |      34.7 |        14.7 |        1.9 
+    ijk_jkl_il_8x16x8 |   f64 |     1 |     8192 |      29.7 |         5.6 |        1.7 
+     ij_jk_ik_c64_n32 |   c64 |     1 |    32768 |      47.9 |        33.0 |       17.8 
+     ij_jk_ik_f64_n64 |   f64 |     1 |   262144 |      50.1 |        35.1 |       18.1 
+      ij_jk_kl_il_n64 |   f64 |     2 |   524288 |      50.2 |        35.3 |       18.1 
+   mps_chain_L32_chi4 |   c64 |    64 |     8192 |       2.9 |         1.4 |        0.2 
+   mps_chain_L32_chi8 |   c64 |    64 |    65536 |      12.8 |         7.3 |        1.5 
+  mps_chain_L32_chi16 |   c64 |    64 |   524288 |      40.4 |        23.0 |        7.9 
+  mps_chain_L32_chi32 |   c64 |    64 |  4194304 |      47.7 |        35.3 |       22.1 
+  mps_chain_L32_chi64 |   c64 |    64 | 33554432 |      39.2 |        39.4 |       30.8 
+
+=== notes ===
+      ikb_knb_inb_n2_b16  f64 plan         0.0005 ms  faer rel_err=8.58e-17
+      ikb_knb_inb_n2_b16  f64 packed       0.0019 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=8.58e-17
+      ikb_knb_inb_n2_b16  f64 tblis        0.0528 ms  rel_err=8.58e-17
+      ikb_knb_inb_n4_b16  f64 plan         0.0007 ms  faer rel_err=2.51e-16
+      ikb_knb_inb_n4_b16  f64 packed       0.0025 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=2.51e-16
+      ikb_knb_inb_n4_b16  f64 tblis        0.0539 ms  rel_err=2.51e-16
+      ikb_knb_inb_n8_b16  f64 plan         0.0009 ms  faer rel_err=1.91e-16
+      ikb_knb_inb_n8_b16  f64 packed       0.0041 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=1.91e-16
+      ikb_knb_inb_n8_b16  f64 tblis        0.0584 ms  rel_err=1.91e-16
+     ikb_knb_inb_n16_b16  f64 plan         0.0037 ms  faer rel_err=1.89e-16
+     ikb_knb_inb_n16_b16  f64 packed       0.0094 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=1.89e-16
+     ikb_knb_inb_n16_b16  f64 tblis        0.0719 ms  rel_err=1.89e-16
+      ikb_knb_inb_n2_b64  f64 plan         0.0013 ms  faer rel_err=1.82e-16
+      ikb_knb_inb_n2_b64  f64 packed       0.0063 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=1.82e-16
+      ikb_knb_inb_n2_b64  f64 tblis        0.2025 ms  rel_err=1.82e-16
+      ikb_knb_inb_n4_b64  f64 plan         0.0021 ms  faer rel_err=2.26e-16
+      ikb_knb_inb_n4_b64  f64 packed       0.0088 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=2.26e-16
+      ikb_knb_inb_n4_b64  f64 tblis        0.2097 ms  rel_err=2.26e-16
+      ikb_knb_inb_n8_b64  f64 plan         0.0032 ms  faer rel_err=2.69e-16
+      ikb_knb_inb_n8_b64  f64 packed       0.0141 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=2.69e-16
+      ikb_knb_inb_n8_b64  f64 tblis        0.2210 ms  rel_err=2.69e-16
+     ikb_knb_inb_n16_b64  f64 plan         0.0144 ms  faer rel_err=3.43e-16
+     ikb_knb_inb_n16_b64  f64 packed       0.0362 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=3.43e-16
+     ikb_knb_inb_n16_b64  f64 tblis        0.2785 ms  rel_err=3.43e-16
+     ikb_knb_inb_n2_b256  f64 plan         0.0048 ms  faer rel_err=1.51e-16
+     ikb_knb_inb_n2_b256  f64 packed       0.0231 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=1.51e-16
+     ikb_knb_inb_n2_b256  f64 tblis        0.7998 ms  rel_err=1.51e-16
+     ikb_knb_inb_n4_b256  f64 plan         0.0080 ms  faer rel_err=1.73e-16
+     ikb_knb_inb_n4_b256  f64 packed       0.0350 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=1.73e-16
+     ikb_knb_inb_n4_b256  f64 tblis        0.8165 ms  rel_err=1.73e-16
+     ikb_knb_inb_n8_b256  f64 plan         0.0118 ms  faer rel_err=2.14e-16
+     ikb_knb_inb_n8_b256  f64 packed       0.0593 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=2.14e-16
+     ikb_knb_inb_n8_b256  f64 tblis        0.8767 ms  rel_err=2.14e-16
+    ikb_knb_inb_n16_b256  f64 plan         0.0604 ms  faer rel_err=2.38e-16
+    ikb_knb_inb_n16_b256  f64 packed       0.1426 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=2.38e-16
+    ikb_knb_inb_n16_b256  f64 tblis        1.1088 ms  rel_err=2.38e-16
+       ijk_jkl_il_8x16x8  f64 plan         0.0006 ms  faer rel_err=4.06e-16
+       ijk_jkl_il_8x16x8  f64 packed       0.0029 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=4.06e-16
+       ijk_jkl_il_8x16x8  f64 tblis        0.0095 ms  rel_err=4.06e-16
+        ij_jk_ik_c64_n32  c64 plan         0.0055 ms  faer rel_err=5.44e-16
+        ij_jk_ik_c64_n32  c64 packed       0.0079 ms  avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=5.44e-16
+        ij_jk_ik_c64_n32  c64 tblis        0.0148 ms  rel_err=5.45e-16
+        ij_jk_ik_f64_n64  f64 plan         0.0105 ms  faer rel_err=2.36e-16
+        ij_jk_ik_f64_n64  f64 packed       0.0149 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=2.36e-16
+        ij_jk_ik_f64_n64  f64 tblis        0.0290 ms  rel_err=2.36e-16
+         ij_jk_kl_il_n64  f64 plan         0.0209 ms  faer rel_err=5.71e-16 steps=2 m/n/k=final-step per-step MxNxK=64x64x64x2
+         ij_jk_kl_il_n64  f64 packed       0.0297 ms  avx512.f64.real.24x8 24x8 AB 264x256x1536 policy=auto align=false rel_err=5.71e-16 steps=2 m/n/k=final-step per-step MxNxK=64x64x64x2
+         ij_jk_kl_il_n64  f64 tblis        0.0579 ms  rel_err=5.71e-16 steps=2 m/n/k=final-step per-step MxNxK=64x64x64x2
+      mps_chain_L32_chi4  c64 plan         0.0225 ms  faer rel_err=2.16e-15 steps=64 m/n/k=final-step per-step MxNxK=4x8x4x32;4x4x8x32
+      mps_chain_L32_chi4  c64 packed       0.0458 ms  avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=1.63e-15 steps=64 m/n/k=final-step per-step MxNxK=4x8x4x32;4x4x8x32
+      mps_chain_L32_chi4  c64 tblis        0.3077 ms  rel_err=1.53e-15 steps=64 m/n/k=final-step per-step MxNxK=4x8x4x32;4x4x8x32
+      mps_chain_L32_chi8  c64 plan         0.0410 ms  faer rel_err=1.19e-15 steps=64 m/n/k=final-step per-step MxNxK=8x16x8x32;8x8x16x32
+      mps_chain_L32_chi8  c64 packed       0.0717 ms  avx512.c64.planar.16x6 16x6 BA 128x256x768 policy=auto align=false | avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=1.37e-15 steps=64 m/n/k=final-step per-step MxNxK=8x16x8x32;8x8x16x32
+      mps_chain_L32_chi8  c64 tblis        0.3512 ms  rel_err=1.40e-15 steps=64 m/n/k=final-step per-step MxNxK=8x16x8x32;8x8x16x32
+     mps_chain_L32_chi16  c64 plan         0.1039 ms  faer rel_err=2.63e-15 steps=64 m/n/k=final-step per-step MxNxK=16x32x16x32;16x16x32x32
+     mps_chain_L32_chi16  c64 packed       0.1821 ms  avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=2.66e-15 steps=64 m/n/k=final-step per-step MxNxK=16x32x16x32;16x16x32x32
+     mps_chain_L32_chi16  c64 tblis        0.5335 ms  rel_err=1.70e-15 steps=64 m/n/k=final-step per-step MxNxK=16x32x16x32;16x16x32x32
+     mps_chain_L32_chi32  c64 plan         0.7031 ms  faer rel_err=3.21e-15 steps=64 m/n/k=final-step per-step MxNxK=32x64x32x32;32x32x64x32
+     mps_chain_L32_chi32  c64 packed       0.9513 ms  avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=3.28e-15 steps=64 m/n/k=final-step per-step MxNxK=32x64x32x32;32x32x64x32
+     mps_chain_L32_chi32  c64 tblis        1.5205 ms  rel_err=3.55e-15 steps=64 m/n/k=final-step per-step MxNxK=32x64x32x32;32x32x64x32
+     mps_chain_L32_chi64  c64 plan         6.8557 ms  avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=4.41e-15 steps=64 m/n/k=final-step per-step MxNxK=64x128x64x32;64x64x128x32
+     mps_chain_L32_chi64  c64 packed       6.8112 ms  avx512.c64.planar.16x6 16x6 AB 128x256x768 policy=auto align=false rel_err=4.41e-15 steps=64 m/n/k=final-step per-step MxNxK=64x128x64x32;64x64x128x32
+     mps_chain_L32_chi64  c64 tblis        8.7172 ms  rel_err=4.10e-15 steps=64 m/n/k=final-step per-step MxNxK=64x128x64x32;64x64x128x32
+
+wrote /home/shinaoka/projects/tensor4all/tprims-benchmark/data/results/zen5-cpu/per-shape/20261010T032142Z/run0-fixed-1t.csv

@@ -136,6 +136,13 @@ def render(manifest, suite, rows, run_dir, root, providers):
         "a row whose ratio is smaller than its own scatter is not separable from noise. The same "
         "number is in the CSV's `spread` column for every row.",
         "",
+        "`prepare (µs)` is what each side spends *before* the timed call - the plan for tprims, the "
+        "operand descriptors for the reference. The timing policy excludes that work, which is why "
+        "the harness can build a plan once and time only execution, and the reference has nothing "
+        "comparable to hoist: its own analysis is inside the one call it exposes. On microsecond "
+        "cases the preparation can exceed the whole timed call, so a ratio there compares a "
+        "prepared path with a one-shot call rather than two kernels.",
+        "",
     ]
     for size in (size_mib or [None]):
         for dtype in dtypes:
@@ -163,6 +170,23 @@ def render(manifest, suite, rows, run_dir, root, providers):
                          if r["engine"] in ("plan", "tblis") and r.get("spread") not in (None, "")]
                     return max(s) if s else None
 
+                def prep(engine):
+                    # Seconds each side spends before the timed call. Rows recorded
+                    # before the harness carried the column report nothing.
+                    s = [float(r["prepare_s"]) for r in group
+                         if r["engine"] == engine and r.get("prepare_s") not in (None, "")]
+                    return s
+
+                def prep_cell(case=None):
+                    def one(engine):
+                        s = [float(r["prepare_s"]) for r in group
+                             if r["engine"] == engine
+                             and (case is None or r["case"] == case)
+                             and r.get("prepare_s") not in (None, "")]
+                        return f"{gm(s) * 1e6:.1f}" if s else "-"
+                    sides = [one(e) for e in ("plan", "tblis") if e in engines]
+                    return "/".join(sides) if sides else "-"
+
                 def ratio_cell(left, right):
                     if not left or not right:
                         return "-"
@@ -170,16 +194,21 @@ def render(manifest, suite, rows, run_dir, root, providers):
                     sp = scatter()
                     return f"{r:.3f}" + (f" ±{sp * 100:.1f}%" if sp is not None else "")
 
+                has_prep = any(prep(e) for e in engines)
                 header = "| case | " + " | ".join(f"{label(e)} (ms)" for e in engines) + " |"
+                if has_prep:
+                    header = header[:-1] + "| prepare (µs) |"
                 if ratio:
                     header = header[:-1] + "| tprims [plan] / tblis |"
                 out.append(header)
-                out.append("|" + "---|" * (len(engines) + (2 if ratio else 1)))
+                out.append("|" + "---|" * (len(engines) + (2 if ratio else 1) + (1 if has_prep else 0)))
                 for case in sorted({r["case"] for r in group}):
                     cells = []
                     for e in engines:
                         s = times(case, e)
                         cells.append(f"{gm(s) * 1e3:.4f}" if s else "-")
+                    if has_prep:
+                        cells.append(prep_cell(case))
                     if ratio:
                         cells.append(ratio_cell(times(case, "plan"), times(case, "tblis")))
                     out.append(f"| `{case}` | " + " | ".join(cells) + " |")
@@ -187,6 +216,8 @@ def render(manifest, suite, rows, run_dir, root, providers):
                 for e in engines:
                     s = [float(r["seconds"]) for r in group if r["engine"] == e]
                     summary.append(f"{gm(s) * 1e3:.4f}" if s else "-")
+                if has_prep:
+                    summary.append(prep_cell())
                 if ratio:
                     summary.append(ratio_cell([float(r["seconds"]) for r in group if r["engine"] == "plan"],
                                                [float(r["seconds"]) for r in group if r["engine"] == "tblis"]))
