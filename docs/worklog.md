@@ -566,3 +566,55 @@ planner is justified by anything measured so far. The stride-alignment sensitivi
 its own: `--stress padded`, which only perturbs the leading dimension, is 1.9x faster
 (20.1 ms) and `ragged` 1.6x (21.2 ms), against 38.0 ms at the TCCG sizing that rounds
 stride-1 extents to multiples of 24.
+
+## 2026-10-10 the packed driver gets a blocked outer traversal, and it pays exactly where the reference does
+
+The lead the previous entry closed on - the packing of strided folded axes - is now a
+change rather than a plan: tprims-rs#101 (merged `0df08df4`) gives the packed driver a
+blocked outer traversal. A block spans the output's fastest axis whole times a line's
+worth (8 elements of `f64`) along the operand's fastest axis, its tiles are permuted into
+the output's order, and it is emitted once. When the packed operand and the output disagree
+about which axis is fastest, today's slices hold the output's fast axis once per
+`product_of_the_other_axes` rows, so no reordering can make the pack read a whole line; a
+block that spans whole runs of both axes can.
+
+**It is enabled by measurement, not by geometry.** Over the 98 tcbench rows at 1T, measured
+with the path on and off in one session, the class that wins without ever losing is
+`n <= 64 && k > n` - a thin output against a deeper contraction, `m*k` operand elements
+against `m*n` output ones - on top of a single K slab, a single NC panel, `pm == 1 && pn ==
+1` and a non-Direct family. Everything else keeps the old traversal, with `grid_elems`,
+`block_rows` and `mc` taking their previous values.
+
+**This cell confirms it independently.** Re-recording the cell at the new pin, `tprims
+[packed]` against the previous revision:
+
+| case | dtype | 1T | 4T |
+| --- | --- | --- | --- |
+| `abjc-cbka-kj` | f64 | 35.9 -> 26.1 ms (**x1.38**) | 12.80 -> 12.77 ms (x1.00) |
+| `abjc-cbka-kj` | c64 | 66.4 -> 56.7 ms (**x1.17**) | 20.26 -> 20.12 ms (x1.01) |
+| `adbjc-cbdka-kj` | f64 | 42.8 -> 29.6 ms (**x1.45**) | 16.25 -> 15.08 ms (x1.08) |
+| `adbjc-cbdka-kj` | c64 | 70.0 -> 55.7 ms (**x1.26**) | 22.30 -> 20.89 ms (x1.07) |
+
+The 4T rows are unchanged by construction: the path is serial. In the phase instrument the
+mechanism is the pack: `pack_a` 28.8 -> 6.4 ms, against about 8.6 ms of added permutation and
+per-block work. The class is also the one where the reference wins - over this cell's
+earlier revision TBLIS wins 12 of its 24 `n <= 64 && k <= 48` rows and 4 of 168 elsewhere -
+so this closes the gap where this library was furthest behind, and it does nothing on the
+rows where it was already ahead.
+
+An independent review of the finished diff (`gpt-6.1-sol`) found two memory-safety blockers
+and both were real, which is why the eligibility is as narrow as it is: a Direct family
+could compute into `D`, leave its grid slot unwritten and have the emitter read it (the
+guard now tests `collect`, and Direct families are refused outright), and the grid
+permutation walks every column of the grid while a column-group worker fills only its own
+(hence `pn == 1`). It also caught an unenforced row budget - the panel and the grid are
+sized from the block *rounded up to whole `MR` tiles* - and per-execute allocations in the
+block enumeration, both now fixed, plus a phase account that was not a partition: those two
+phases were removed again and the design document says what the `setup` remainder can and
+cannot support.
+
+What is not claimed: the 4T rows (serial only), the blocked path's zero-allocation claim
+(resting on reading the code - `tests/packed_workspace_alloc` exercises a matrix multiply,
+whose one folded row axis can never select this path), and any generalisation of the
+eligibility beyond the class it was fitted to. The design record, including the corrections,
+is `docs/design/blocked-outer-traversal.md` sections 9-14 in tprims-rs.
