@@ -438,3 +438,67 @@ What has not changed: what is timed. The exclusion stands; the record stops hidi
 its size. The reference still cannot be helped here - TBLIS 2.0 exposes no prepared
 contraction, so its analysis is inside the call and `prepare_s` for its rows is only
 the descriptors it builds outside, 0.4-0.5 us per step.
+
+## 2026-10-10 where the 1.5x against the reference lives: the packing, not the kernel
+
+Sixteen TCCG rows lose to the reference by more than their own scatter. This is the
+investigation that located them, run against the pinned sources and the pinned binary.
+
+What the reference does, read from `/tmp/tblis-build-v2.0-beta2/tblis` (tag v2.0-beta2):
+it classifies the labels into batch (A and B and C), contracted (A and B), m (A and C)
+and n (B and C), folds each group into one strided multi-index
+(`frame/3t/mult.cxx:79-125`), and then runs its own blocked loop with **BLIS's context** -
+kernel set and blocking parameters - rather than calling BLIS's gemm: it registers its own
+packing and gemm kernels into BLIS (`frame/1m/packm/packm_blk_bsmtc.cxx`,
+`frame/3m/gemm/gemm_ker_bsmtc.cxx` carry `PACKM_BSMTC_UKR`, `GEMM_BSMTC_UKR`, plus a `dpd`
+family) and calls BLIS's micro-kernel `gemm_ukr` from inside them. It has no superscalar
+path: it always packs. BLIS's zen3 configuration selects `bli_dgemm_haswell_asm_6x8`
+(6x8) and `bli_zgemm_haswell_asm_3x4` (3x4), far smaller register tiles than this
+library's 24x8 and 16x6.
+
+Three measurements, in the order in which they rule things out. All on this host, one
+core of one L3 domain, best of 5, 1500 ms of priming per arm.
+
+**1. Not the kernel.** `experiments/openblas-kernel` runs a production kernel inside this
+library's driver, packers, blocking and write-back, so the only difference is the kernel.
+With its priming fixed (it used one warm-up call per arm, which understated the arm
+measured first - ours, because the default family is always first), the default kernel
+wins on every shape:
+
+| case | ours (`avx512.f64.real.24x8`) | OpenBLAS (`dgemm_kernel_16x2_skylakex`) | ratio |
+|---|---|---|---|
+| `gemm-1024-col` | 47.6 GFLOP/s | 29.1 | 1.64x |
+| `gemm-92160x40x48-col` | 29.4 | 21.1 | 1.39x |
+| `gemm-3456x3456x24-col` | 39.0 | 19.9 | 1.96x |
+
+`gemm-92160x40x48-col` is the effective GEMM of the worst losing tensor case, and the
+default kernel is 1.39x *ahead* there: swapping kernels would make that row worse.
+
+**2. Not the configuration.** On `abjc-cbka-kj` f64 16 MiB at 1T:
+`TCBENCH_BLOCKMODEL=analytical` gives 1.554 against 1.541 for the shipping constants;
+`TCBENCH_{MC,NC,KC}` at half and at one and a half times the derived values move the
+packed arm by at most 2.5%; `TCBENCH_ORIENT=ba` 1.653; `TCBENCH_WRITEBACK=gather` 1.581.
+At 4T, `TCBENCH_PARTITION=4x1` gives 1.495 against the default's 1.522. Nothing here is
+the lever.
+
+**3. The layout is what costs, not the dimensions.** Same dimensions (m=92160, n=40,
+k=48), same family, blocking and partition, best of 5:
+
+| how the case was requested | packed | reference | ratio | packed GFLOP/s |
+|---|---|---|---|---|
+| `--stress none` (TCCG sizing) | 37.95 ms | 24.81 ms | 1.541 | 9.3 |
+| `--stress ragged` (m=86151, n=39, k=47) | 21.23 | 31.11 | 0.675 | 14.9 |
+| `--stress padded` (m=92160, n=40, k=48) | 20.09 | 20.04 | 1.014 | 17.6 |
+| contiguous column-major GEMM of the same dims (`experiments/openblas-kernel`) | 12.02 | - | - | 29.4 |
+
+The corpus's strides are the explanation. In `abjc-cbka-kj` the folded `m` axis is the
+label `j`, whose stride in `A = abjc` is `a*b` - not 1 - and the contracted group `(a,b,c)`
+has strides `(1, a, a*b*j)`: a strided, interleaved panel, where the experiment's case is
+a contiguous matrix. Same dimensions, same kernel, 3.2x apart.
+
+So the 1.5x is the **packing of strided folded axes** - what the reference implements as
+its BLIS-registered block-scatter packing - and it is not a micro-kernel project. The
+next measurement is to give the kernel A/B experiment the corpus's label sets (a tensor
+`Problem` rather than a matrix), so the packing cost is isolated the same way the kernel
+just was. Neither the `prepare (us)` column nor the suite's blind-spot note covers this:
+it is a packing cost, not a setup cost.
