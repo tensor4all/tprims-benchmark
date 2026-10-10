@@ -502,3 +502,26 @@ next measurement is to give the kernel A/B experiment the corpus's label sets (a
 `Problem` rather than a matrix), so the packing cost is isolated the same way the kernel
 just was. Neither the `prepare (us)` column nor the suite's blind-spot note covers this:
 it is a packing cost, not a setup cost.
+
+### What the packing reads, axis by axis
+
+The plan for `abjc-cbka-kj` f64 16 MiB 1T records its own axes, and they say why a
+contiguous matrix of the same dimensions is not the same problem. The m group is **three
+axes** - extents 48 x 40 x 48 - with `A`-strides (92160, 48, 1) and output strides
+(1, 48, 76800); the contracted axis is a single 48 at `A`-stride 1920 and `B`-stride 1, so
+`B` is a plain contiguous panel and the output is contiguous within 1920-element runs.
+Only `A` is interleaved, and the packing has to read it as a blocked, strided pattern
+(a is stride-1 in 48-runs, b steps by 48, c jumps by 92160) rather than as a matrix. That
+is exactly the shape of read that the reference implements as a BLIS-registered
+block-scatter packm kernel (`PACKM_BSMTC_UKR`).
+
+Two more things are ruled out, in addition to the three above:
+
+- **The output's write-back alignment is not it.** Forcing `align_c_lines: true` in the
+  packed arm's configuration (a temporary patch, reverted; the rows confirm
+  `policy=auto align=true`) leaves the case at 38.17 ms against 38.24 ms with the shipping
+  `false` at 1T, and 13.43 against 13.58 at 4T. Rounding strip boundaries to C's 64-byte
+  lines buys nothing here.
+- **Nor is it the second operand.** `B` is contiguous for this case (`k` at stride 1,
+  `n` at stride 48), and the output is contiguous in its runs; the interleaving is in `A`
+  only.
