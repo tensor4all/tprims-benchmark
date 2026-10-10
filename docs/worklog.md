@@ -308,6 +308,36 @@ On the per-shape corpus the same ratio is 42/42 in tprims's favour, with a media
 per-call setup dominates. The two corpora disagree because they ask different
 questions, which is why both are published.
 
+Where the 16 losing rows come from (measured after the cell, on the same binary and
+the same host, each probe putting tprims and TBLIS in one process so the ratio is
+free of session drift):
+
+- **Not the planner's choice.** On every one of the 16, `plan` and `packed` agree to
+  1.00 and the route is the packed driver. It has no alternative: the copy-free faer
+  route requires each GEMM axis to be a contiguous group of its operands
+  (`crates/tprims-contract/src/strategy/faer.rs`, `plan()` returning `None`), and
+  these cases interleave contracted axes with output axes inside `A` - in
+  `abjc-cbka-kj` the contracted `(a,b,c)` sits at axes 0, 1 and 3 - so the fusion
+  fails and the planner records `Reason::NotFusable`. Raising or lowering
+  `FaerLimit` cannot change that: faer is not disfavoured here, it is unavailable.
+- **Not the gather/scatter path.** The rows report `regular_a`/`regular_b` of 1.00
+  (0.67/1.00 for two of the c64 ones), i.e. the packing is regular panels.
+- **Not the blocking model.** `TCBENCH_BLOCKMODEL=analytical` against the shipping
+  `legacy` constants: packed/tblis 1.554 against 1.541 (`abjc-cbka-kj` f64 1T),
+  1.612 against 1.611 (`adbjc-cbdka-kj` f64 1T), 1.519 against 1.494, 1.684 against
+  1.675 - no effect on any of the four probed.
+- **Not the blocking values.** `TCBENCH_{MC,NC,KC}` at half and one and a half times
+  the derived values move `packed` by at most 2.5% and leave the ratio between 1.51
+  and 1.64.
+
+What is left is the inner loop: tprims's `avx512.f64.real.24x8` and
+`avx512.c64.planar.16x6` packed kernels against whatever BLIS drives through TBLIS's
+TTGT formulation on exactly the shapes that cannot be fused. Closing that is
+micro-kernel work, not a configuration change, and it is not attempted here; what
+this record fixes is where the gap is and where it is not. On the per-shape corpus -
+fusable, contiguous - the same comparison is 42/42 in tprims's favour with a median
+of 0.042, which is why the two corpora are both published.
+
 The per-shape cell is recorded twice end to end (A/A, `aa: 2`), because a ratio
 needs a noise floor before it can be read. Same condition measured twice, 126 rows:
 
