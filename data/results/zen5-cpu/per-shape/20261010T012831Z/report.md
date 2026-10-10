@@ -1,5 +1,3 @@
-<!-- generated from data/results/zen5-cpu/per-shape/20261010T012831Z/report.md by scripts/publish_report.py; the report below is the source of truth -->
-
 # `per-shape` on `zen5-cpu`
 
 - tprims-rs commit: `0ec98136c4c894c00013f25b3c99e4a46097e7e9`

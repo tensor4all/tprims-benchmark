@@ -308,6 +308,25 @@ On the per-shape corpus the same ratio is 42/42 in tprims's favour, with a media
 per-call setup dominates. The two corpora disagree because they ask different
 questions, which is why both are published.
 
+The per-shape cell is recorded twice end to end (A/A, `aa: 2`), because a ratio
+needs a noise floor before it can be read. Same condition measured twice, 126 rows:
+
+| statistic | value |
+|---|---|
+| time ratio A2/A, median | 0.9987 |
+| time ratio A2/A, p90 | 1.0160 |
+| rows off by more than 3% | 22 of 126 |
+| rows off by more than 10% | 2 of 126 |
+| per engine, median \|ratio - 1\| | plan 0.6%, packed 1.0%, tblis 0.7% |
+| per engine, worst \|ratio - 1\| | plan 4.9%, packed 8.2%, tblis 25.0% |
+
+So a cell of this shape reproduces to about 1% in the middle with a tail to tens of
+percent, which is the number that decides whether a row may be quoted: the two rows
+of the tcbench cell whose margin is smaller than their own scatter are exactly the
+kind this cannot separate. The tcbench cell is not repeated: it is now a three-arm,
+20-minute cell and an A/A would be 40 minutes, so its rows carry the per-repetition
+`spread` instead and the per-shape A/A stands as this host's measured noise floor.
+
 The 2026-10-09 cells stay as history. They were recorded without the third arm and
 without a per-row scatter, so their rows cannot be quoted against an outside
 implementation and their cross-arm margins cannot be separated from noise; the two
