@@ -252,3 +252,63 @@ What this changes about what is already published:
   Its conclusion is conservative in the safe direction (faer's measured advantage is
   a lower bound, and "no packed win at 1T" is robust), but its margins are not the
   margins of a fair comparison and are marked so in the decision log.
+
+## 2026-10-10 TBLIS comes back to the tcbench cell, and the pages show the ratio
+
+The `tcbench` suite had no independent reference: its arms were this library's
+planner and this library's packed driver, so a reader could tell that one internal
+route beat another and nothing about whether either is competitive. TBLIS is back
+as the third arm, and both suites now publish `tprims [plan] / tblis` per case.
+
+Why the retirement was reversed. The arm was retired when the record could not name
+which TBLIS it had measured (`docs/worklog.md`, 2026-10-09). That is no longer true
+of the *other* suite: `per-shape` builds TBLIS from a release tag with
+`benchmarks/scripts/build_tblis.sh` and records the tag, the TBLIS commit, the
+bundled BLIS revision and the artifact's sha256 in every run and page. The same
+provenance now covers the tcbench cell, so the objection that retired the arm has
+no object left.
+
+What it costs: the tcbench cell grew from two arms to three (the third is TBLIS's
+own verify pass plus 49 cases x 1.5 s of priming per thread count), so a re-record is
+about 50% longer. That is the price of a comparison this project's claim rests on:
+without it, "tprims is fast" has no outside referent.
+
+What the pages gained. `report_run.py` adds one column, `tprims [plan] / tblis`, and
+appends the largest `spread` among the rows behind it as `±x%`. The scatter is now
+recorded per row in the CSV (`spread`, from tprims-rs#92) and shown beside the ratio,
+because a ratio of 1.03 means nothing on a host whose own repetitions scatter by
+tens of percent: on `ij-ik-kj` 1 MiB 1T the ratio is 0.80 in f64 and 0.92 in c64 with
+a scatter of 0.1%, and a row whose ratio is inside its own `±` is not a result.
+
+What the new cell says (zen5-cpu, `0ec98136c4c8`, 16 MiB, 1T and 4T, 49 cases x 2
+dtypes = 196 rows). `tprims [plan] / tblis` has a median of 0.833 and a minimum of
+0.401, so the planner's choice is ahead of TBLIS on 180 of 196 rows. **On 16 rows it
+is behind**, and on 14 of those the margin exceeds the row's own scatter, i.e. they
+are not noise:
+
+| case | dtype | T | plan/tblis | plan spread | tblis spread |
+|---|---|---|---|---|---|
+| `abjc-cbka-kj` | f64 | 4T | 1.524 | 3.8% | 14.3% |
+| `adbjc-cbdka-kj` | f64 | 1T | 1.467 | 0.8% | 5.2% |
+| `ajbc-ckba-jk` | f64 | 4T | 1.442 | 8.5% | 2.6% |
+| `adbjc-cbdka-kj` | c64 | 1T | 1.416 | 1.3% | 1.2% |
+| `abjc-cbka-kj` | f64 | 1T | 1.388 | 1.2% | 0.6% |
+
+They are the cases whose output is transposed (`abjc-cbka-kj`, `ajbc-ckba-jk`,
+`adbjc-cbdka-kj`, `ajbdc-ckbad-jk` — the rank-5 and rank-6 ones from CCSD(T) and
+AO2MO), plus `ijk-il-jlk` in both dtypes at 4T. That is a concrete, reproducible
+target for the next optimisation pass, and it was invisible while the suite had no
+outside reference: the same rows show `packed` and `plan` within a few percent of
+each other, so an internal comparison could only say that two tprims routes agree.
+The two rows whose margin is smaller than their scatter, and the 109% scatter seen
+on one row elsewhere in the cell, are recorded as such rather than dropped.
+
+On the per-shape corpus the same ratio is 42/42 in tprims's favour, with a median of
+0.042 and a minimum of 0.006 - tiny batched GEMMs and MPS chains, where TBLIS's
+per-call setup dominates. The two corpora disagree because they ask different
+questions, which is why both are published.
+
+The 2026-10-09 cells stay as history. They were recorded without the third arm and
+without a per-row scatter, so their rows cannot be quoted against an outside
+implementation and their cross-arm margins cannot be separated from noise; the two
+cells in this change are the ones to read.

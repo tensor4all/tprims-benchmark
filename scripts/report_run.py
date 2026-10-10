@@ -130,6 +130,12 @@ def render(manifest, suite, rows, run_dir, root, providers):
            else "the timed repetitions (this run made a single complete set, so it carries no A/A)")
         + " of the best wall time per engine.",
         "",
+        "Where the independent reference ran, the last column is `tprims [plan] / tblis`, a ratio of "
+        "those two geomeans: above 1 means tprims took longer. The `±` after it is the largest "
+        "scatter among the repetitions behind it (the harness's `spread`, `(max - min) / best`), so "
+        "a row whose ratio is smaller than its own scatter is not separable from noise. The same "
+        "number is in the CSV's `spread` column for every row.",
+        "",
     ]
     for size in (size_mib or [None]):
         for dtype in dtypes:
@@ -143,19 +149,47 @@ def render(manifest, suite, rows, run_dir, root, providers):
                 out.append(f"## {heading}, {dtype}, {threads}T "
                            f"(CPU {manifest['threads']['cpu_sets'].get(str(threads), '?')})")
                 out.append("")
+                ratio = "plan" in engines and "tblis" in engines
+                gm = statistics.geometric_mean
+
+                def times(case, engine):
+                    return [float(r["seconds"]) for r in group
+                            if r["case"] == case and r["engine"] == engine]
+
+                def scatter():
+                    # Rows recorded before the harness carried `spread` have none, and a
+                    # single-repetition row has 0; absence is reported as no `±`.
+                    s = [float(r["spread"]) for r in group
+                         if r["engine"] in ("plan", "tblis") and r.get("spread") not in (None, "")]
+                    return max(s) if s else None
+
+                def ratio_cell(left, right):
+                    if not left or not right:
+                        return "-"
+                    r = gm(left) / gm(right)
+                    sp = scatter()
+                    return f"{r:.3f}" + (f" ±{sp * 100:.1f}%" if sp is not None else "")
+
                 header = "| case | " + " | ".join(f"{label(e)} (ms)" for e in engines) + " |"
+                if ratio:
+                    header = header[:-1] + "| tprims [plan] / tblis |"
                 out.append(header)
-                out.append("|" + "---|" * (len(engines) + 1))
+                out.append("|" + "---|" * (len(engines) + (2 if ratio else 1)))
                 for case in sorted({r["case"] for r in group}):
                     cells = []
                     for e in engines:
-                        s = [float(r["seconds"]) for r in group if r["case"] == case and r["engine"] == e]
-                        cells.append(f"{statistics.geometric_mean(s) * 1e3:.4f}" if s else "-")
+                        s = times(case, e)
+                        cells.append(f"{gm(s) * 1e3:.4f}" if s else "-")
+                    if ratio:
+                        cells.append(ratio_cell(times(case, "plan"), times(case, "tblis")))
                     out.append(f"| `{case}` | " + " | ".join(cells) + " |")
                 summary = []
                 for e in engines:
                     s = [float(r["seconds"]) for r in group if r["engine"] == e]
-                    summary.append(f"{statistics.geometric_mean(s) * 1e3:.4f}" if s else "-")
+                    summary.append(f"{gm(s) * 1e3:.4f}" if s else "-")
+                if ratio:
+                    summary.append(ratio_cell([float(r["seconds"]) for r in group if r["engine"] == "plan"],
+                                               [float(r["seconds"]) for r in group if r["engine"] == "tblis"]))
                 out.append(f"| **geomean** | " + " | ".join(summary) + " |")
                 out.append("")
     return "\n".join(out)
