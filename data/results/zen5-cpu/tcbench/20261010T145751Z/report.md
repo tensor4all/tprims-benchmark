@@ -1,0 +1,267 @@
+# `tcbench` on `zen5-cpu`
+
+- tprims-rs commit: `0df08df4651413c629903b378eae2c3685716bbd`
+- features: `tblis`
+- harness commit: `64b4455d2b924531a960d77f245ed0902de1af6d`
+- hardware profile: `zen5-cpu`
+- timestamp: `2026-10-10T15:21:03.975308Z`
+- timing policy: v1, best of 5 reps, priming 1500 ms
+- command: `scripts/record_run.py zen5-cpu tcbench`
+- raw data: `data/results/zen5-cpu/tcbench/20261010T145751Z/`
+## What was measured
+
+- **Corpus `TCCG`** — One contraction per case, from coupled-cluster (CCSD, CCSD(T)), AO-to-MO integral transformation and tensor-times-matrix workloads. Each case is a full tensor contraction, not a matrix multiply.
+  Source: Springer & Bientinesi, "Design of a High-Performance GEMM-like Tensor-Tensor Multiplication" (arXiv:1607.00145), and the accompanying HPAC/tccg benchmark.py. Shapes are rescaled from one nominal tensor size by TCCG's sizing rule, so the extents are a function of that knob rather than physical dimensions.
+  Known blind spot: Every case has unit batch extent, so a cost proportional to batch elements is invisible here.
+  Known blind spot: Stride-1 extents are rounded up to a multiple of 24, so the corpus is regular by construction.
+- **Engines** — one row per engine in every table below:
+  - `tprims [plan]` — This library, with its planner choosing the route per case: the packed driver, or the copy-free faer path, or the elementwise path for an all-batch case.
+    Identity (as measured): tprims — the measured revision itself; see tprims above
+  - `tprims [packed]` — This library with the packed driver forced instead of chosen. A diagnostic arm: it shows what the planner's non-packed routes buy or cost on the same inputs.
+    Identity (as measured): tprims — the measured revision itself; see tprims above
+  - `tblis` — Actual C++ TBLIS through the direct FFI adapter, as the independent third-party reference implementation. Pinned by release tag, not by a local revision: `benchmarks/scripts/build_tblis.sh` of the measured checkout builds it from the tag and writes the PROVENANCE this repository records.
+    Identity (as measured): tblis, version 2.0, commit `b16a732939d8454021e0a0f0097cf1cc1dd3ab19` — TBLIS 2.0, configuration zen3; bundled BLIS 358e689cadd6757f564a2992cf46a2f7d6fa6bb0; built with ./configure --prefix=/home/shinaoka/opt/tblis-v2.0-beta2-zen3 --with-blis-config-family=zen3 (cmake, Unix Makefiles, Release); libtblis.so sha256 407b4f6fef7f4ede
+    Caveat: Needs an install prefix (`TBLIS_ROOT`), and TBLIS 2.x builds through CMake, so the prefix cannot be made inside a bare checkout. The page repeats the tag, commit, bundled BLIS revision and artifact hash the manifest recorded.
+- **Sizes** — the nominal tensor size per case in MiB. TCCG's sizing rule scales
+  every extent of a case from it, so the same case at 1 MiB and 16 MiB has the
+  same shape structure at different magnitudes.
+- **dtypes** — `f64` is a real double, `c64` a complex double. The complex rows
+  are the harder case for this library and are never likelier to look good.
+- **Numbers** — milliseconds, best wall time per case and engine. See the timing
+  policy for what is inside and outside the timed region.
+
+## Hardware
+
+- CPU: `AMD Ryzen AI 9 HX 470`
+- logical CPUs: `24`
+- L3: `24 MiB (2 instances)`
+- L3 domains: `0-3: 16 MiB shared; 4-11: 8 MiB shared`
+- OS / arch: `Linux 7.0.0-38-generic` / `x86_64`
+- hostname: `shinaoka-EVO-X1Pro`
+- CPU sets: 1T -> `4`, 4T -> `4-7`
+
+Every row below passed `tcbench verify` (known values and full-output residual <= 1e-10) before timing. Values are the geometric mean over the timed repetitions (this run made a single complete set, so it carries no A/A) of the best wall time per engine.
+
+Where the independent reference ran, the last column is `tprims [plan] / tblis`, a ratio of those two geomeans: above 1 means tprims took longer. The `±` after it is the largest scatter among the repetitions behind it (the harness's `spread`, `(max - min) / best`), so a row whose ratio is smaller than its own scatter is not separable from noise. The same number is in the CSV's `spread` column for every row.
+
+`prepare (µs)` is what each side spends *before* the timed call - the plan for tprims, the operand descriptors for the reference. The timing policy excludes that work, which is why the harness can build a plan once and time only execution, and the reference has nothing comparable to hoist: its own analysis is inside the one call it exposes. On microsecond cases the preparation can exceed the whole timed call, so a ratio there compares a prepared path with a one-shot call rather than two kernels.
+
+## 16 MiB, f64, 1T (CPU 4)
+
+| case | tprims [plan] (ms) | tprims [packed] (ms) | tblis (ms) | prepare (µs) | tprims [plan] / tblis |
+|---|---|---|---|---|---|
+| `abc-bk-akc` | 14.7662 | 14.7621 | 18.6625 | 107.8/0.3 | 0.791 ±6.5% |
+| `abcijk-eiab-jkec` | 14.7802 | 14.7784 | 25.3152 | 43.4/0.1 | 0.584 ±6.5% |
+| `abcijk-eiac-jkeb` | 13.9841 | 13.8771 | 33.9280 | 47.2/0.2 | 0.412 ±6.5% |
+| `abcijk-eibc-jkea` | 13.5553 | 13.5623 | 17.7452 | 61.9/0.2 | 0.764 ±6.5% |
+| `abcijk-ejab-ikec` | 14.5519 | 14.5537 | 22.8255 | 45.3/0.2 | 0.638 ±6.5% |
+| `abcijk-ejac-ikeb` | 13.8073 | 13.7334 | 20.0725 | 48.4/0.1 | 0.688 ±6.5% |
+| `abcijk-ejbc-ikea` | 13.7352 | 13.7269 | 17.7612 | 61.5/0.2 | 0.773 ±6.5% |
+| `abcijk-ekab-ijec` | 14.5555 | 14.5486 | 18.5414 | 44.8/0.2 | 0.785 ±6.5% |
+| `abcijk-ekac-ijeb` | 13.7303 | 13.7172 | 24.0263 | 47.3/0.2 | 0.571 ±6.5% |
+| `abcijk-ekbc-ijea` | 13.6814 | 13.6753 | 17.5395 | 61.1/0.2 | 0.780 ±6.5% |
+| `abcijk-ijma-mkbc` | 13.7014 | 13.7031 | 17.6624 | 60.0/0.2 | 0.776 ±6.5% |
+| `abcijk-ijmb-mkac` | 13.9271 | 14.0130 | 23.9835 | 48.4/0.2 | 0.581 ±6.5% |
+| `abcijk-ijmc-mkab` | 14.5550 | 14.5685 | 18.5790 | 43.6/0.2 | 0.783 ±6.5% |
+| `abcijk-ikma-mjbc` | 13.7473 | 13.7657 | 17.7184 | 61.0/0.2 | 0.776 ±6.5% |
+| `abcijk-ikmb-mjac` | 13.8802 | 13.8831 | 19.6184 | 51.5/0.2 | 0.708 ±6.5% |
+| `abcijk-ikmc-mjab` | 14.5908 | 14.5680 | 22.6909 | 46.8/0.2 | 0.643 ±6.5% |
+| `abcijk-jkma-mibc` | 13.5761 | 13.5978 | 17.6619 | 61.4/0.1 | 0.769 ±6.5% |
+| `abcijk-jkmb-miac` | 13.9999 | 13.9307 | 34.0872 | 47.3/0.2 | 0.411 ±6.5% |
+| `abcijk-jkmc-miab` | 14.7546 | 14.7920 | 25.2806 | 42.8/0.2 | 0.584 ±6.5% |
+| `abcs-rc-abrs` | 9.2785 | 9.3113 | 15.2449 | 388.3/0.2 | 0.609 ±6.5% |
+| `abj-bka-kj` | 19.8990 | 19.8921 | 28.8154 | 132.9/0.4 | 0.691 ±6.5% |
+| `abjc-cbka-kj` | 26.0908 | 26.1034 | 26.8360 | 737.5/0.2 | 0.972 ±6.5% |
+| `abjc-kbac-jk` | 12.5932 | 12.4725 | 20.1410 | 628.5/0.2 | 0.625 ±6.5% |
+| `abjcd-dkbac-jk` | 17.7915 | 17.5937 | 21.9543 | 1566.4/0.3 | 0.810 ±6.5% |
+| `abrs-qb-aqrs` | 8.7200 | 8.7240 | 16.0710 | 585.4/0.2 | 0.543 ±6.5% |
+| `adbjc-cbdka-kj` | 29.1409 | 29.6003 | 39.0184 | 1557.9/0.2 | 0.747 ±6.5% |
+| `ajb-kba-jk` | 18.0028 | 18.0266 | 20.1757 | 105.3/0.3 | 0.892 ±6.5% |
+| `ajbc-ckba-jk` | 21.2377 | 21.2697 | 18.0419 | 738.3/0.2 | 1.177 ±6.5% |
+| `ajbdc-ckbad-jk` | 17.6667 | 17.5267 | 20.8459 | 1544.4/0.2 | 0.847 ±6.5% |
+| `aqrs-pa-pqrs` | 7.7125 | 9.3332 | 15.3619 | 0.4/0.2 | 0.502 ±6.5% |
+| `ij-ik-kj` | 124.3298 | 129.6841 | 134.4358 | 1.0/0.3 | 0.925 ±6.5% |
+| `ij-ikl-ljk` | 17.6768 | 17.6416 | 25.7630 | 44.7/0.2 | 0.686 ±6.5% |
+| `ij-kil-lkj` | 21.6295 | 21.5941 | 30.9044 | 45.3/0.3 | 0.700 ±6.5% |
+| `ijk-ikl-lj` | 15.7735 | 15.7762 | 22.6944 | 102.9/0.2 | 0.695 ±6.5% |
+| `ijk-il-jlk` | 16.9862 | 16.7150 | 18.9366 | 110.2/0.3 | 0.897 ±6.5% |
+| `ijk-ilk-jl` | 15.1157 | 15.1457 | 19.4336 | 102.3/0.2 | 0.778 ±6.5% |
+| `ijk-ilk-lj` | 15.3643 | 15.3466 | 20.4506 | 101.9/0.2 | 0.751 ±6.5% |
+| `ijk-ilmk-mjl` | 7.5912 | 7.5506 | 13.7289 | 25.4/0.2 | 0.553 ±6.5% |
+| `ijkl-imjn-lnkm` | 252.0122 | 252.0978 | 258.7343 | 43.0/0.2 | 0.974 ±6.5% |
+| `ijkl-imjn-nlmk` | 255.3589 | 255.0743 | 258.0988 | 40.8/0.2 | 0.989 ±6.5% |
+| `ijkl-imkn-jnlm` | 251.8395 | 252.0033 | 256.3258 | 39.6/0.1 | 0.982 ±6.5% |
+| `ijkl-imkn-njml` | 250.7370 | 250.5786 | 261.3409 | 40.1/0.1 | 0.959 ±6.5% |
+| `ijkl-imln-jnkm` | 253.6182 | 253.3351 | 256.8362 | 41.0/0.2 | 0.987 ±6.5% |
+| `ijkl-imln-njmk` | 247.7144 | 246.9595 | 262.3854 | 39.8/0.1 | 0.944 ±6.5% |
+| `ijkl-imnj-nlkm` | 253.3053 | 253.2273 | 256.5882 | 41.8/0.2 | 0.987 ±6.5% |
+| `ijkl-imnk-njml` | 248.8702 | 248.7257 | 255.8379 | 39.8/0.2 | 0.973 ±6.5% |
+| `ijkl-minj-nlmk` | 307.6630 | 307.5020 | 307.6933 | 42.0/0.1 | 1.000 ±6.5% |
+| `ijkl-mink-jnlm` | 303.5206 | 303.9952 | 309.4446 | 40.7/0.2 | 0.981 ±6.5% |
+| `ijkl-minl-njmk` | 302.5254 | 302.7360 | 308.8041 | 40.1/0.1 | 0.980 ±6.5% |
+| **geomean** | 29.4629 | 29.5772 | 39.0292 | 70.3/0.2 | 0.755 ±6.5% |
+
+## 16 MiB, f64, 4T (CPU 4-7)
+
+| case | tprims [plan] (ms) | tprims [packed] (ms) | tblis (ms) | prepare (µs) | tprims [plan] / tblis |
+|---|---|---|---|---|---|
+| `abc-bk-akc` | 4.0574 | 4.0999 | 5.5269 | 103.6/0.3 | 0.734 ±82.9% |
+| `abcijk-eiab-jkec` | 5.1903 | 5.1607 | 8.6742 | 42.7/0.2 | 0.598 ±82.9% |
+| `abcijk-eiac-jkeb` | 4.6218 | 4.5346 | 11.6780 | 47.6/0.2 | 0.396 ±82.9% |
+| `abcijk-eibc-jkea` | 4.3258 | 4.2692 | 5.1175 | 61.9/0.2 | 0.845 ±82.9% |
+| `abcijk-ejab-ikec` | 4.9562 | 4.9223 | 7.2897 | 43.8/0.2 | 0.680 ±82.9% |
+| `abcijk-ejac-ikeb` | 4.5761 | 4.5523 | 6.3703 | 47.9/0.2 | 0.718 ±82.9% |
+| `abcijk-ejbc-ikea` | 4.3489 | 4.3035 | 5.2277 | 61.8/0.2 | 0.832 ±82.9% |
+| `abcijk-ekab-ijec` | 4.9195 | 4.9107 | 6.7513 | 45.6/0.2 | 0.729 ±82.9% |
+| `abcijk-ekac-ijeb` | 4.5300 | 4.5838 | 8.7264 | 48.1/0.2 | 0.519 ±82.9% |
+| `abcijk-ekbc-ijea` | 4.3801 | 4.2305 | 5.2195 | 61.2/0.2 | 0.839 ±82.9% |
+| `abcijk-ijma-mkbc` | 4.2322 | 4.3222 | 5.2147 | 61.1/0.2 | 0.812 ±82.9% |
+| `abcijk-ijmb-mkac` | 4.5246 | 4.5569 | 9.0300 | 47.6/0.2 | 0.501 ±82.9% |
+| `abcijk-ijmc-mkab` | 4.8863 | 4.9108 | 6.7508 | 44.5/0.2 | 0.724 ±82.9% |
+| `abcijk-ikma-mjbc` | 4.2562 | 4.3493 | 5.2136 | 61.4/0.2 | 0.816 ±82.9% |
+| `abcijk-ikmb-mjac` | 4.5242 | 4.5643 | 6.3549 | 51.7/0.2 | 0.712 ±82.9% |
+| `abcijk-ikmc-mjab` | 4.9097 | 4.8892 | 7.1572 | 43.5/0.2 | 0.686 ±82.9% |
+| `abcijk-jkma-mibc` | 4.1864 | 4.2715 | 5.1336 | 60.3/0.2 | 0.815 ±82.9% |
+| `abcijk-jkmb-miac` | 4.5238 | 4.5750 | 11.8017 | 48.2/0.2 | 0.383 ±82.9% |
+| `abcijk-jkmc-miab` | 5.1704 | 5.1621 | 8.8346 | 43.6/0.2 | 0.585 ±82.9% |
+| `abcs-rc-abrs` | 2.6191 | 2.6411 | 4.6965 | 386.2/0.3 | 0.558 ±82.9% |
+| `abj-bka-kj` | 5.5729 | 5.5346 | 9.3122 | 122.6/0.3 | 0.598 ±82.9% |
+| `abjc-cbka-kj` | 12.5670 | 12.7734 | 8.4617 | 697.5/0.2 | 1.485 ±82.9% |
+| `abjc-kbac-jk` | 3.6772 | 3.6546 | 6.4023 | 581.8/0.3 | 0.574 ±82.9% |
+| `abjcd-dkbac-jk` | 7.1482 | 7.1288 | 7.1486 | 1567.4/0.3 | 1.000 ±82.9% |
+| `abrs-qb-aqrs` | 2.2810 | 2.2979 | 4.3956 | 603.8/0.3 | 0.519 ±82.9% |
+| `adbjc-cbdka-kj` | 15.2245 | 15.0789 | 13.4943 | 1564.7/0.2 | 1.128 ±82.9% |
+| `ajb-kba-jk` | 4.7977 | 4.7915 | 6.0171 | 102.0/0.3 | 0.797 ±82.9% |
+| `ajbc-ckba-jk` | 7.9960 | 7.9700 | 5.7374 | 693.6/0.2 | 1.394 ±82.9% |
+| `ajbdc-ckbad-jk` | 7.0714 | 7.0638 | 6.6394 | 1553.0/0.2 | 1.065 ±82.9% |
+| `aqrs-pa-pqrs` | 2.1877 | 2.7685 | 4.6120 | 0.4/0.3 | 0.474 ±82.9% |
+| `ij-ik-kj` | 31.0183 | 35.3732 | 35.9557 | 0.7/0.3 | 0.863 ±82.9% |
+| `ij-ikl-ljk` | 6.7162 | 6.6822 | 7.6779 | 44.8/0.3 | 0.875 ±82.9% |
+| `ij-kil-lkj` | 7.9118 | 7.8605 | 9.5725 | 45.7/0.3 | 0.827 ±82.9% |
+| `ijk-ikl-lj` | 4.2064 | 4.1797 | 6.0648 | 102.5/0.3 | 0.694 ±82.9% |
+| `ijk-il-jlk` | 5.4522 | 5.4140 | 4.7526 | 110.5/0.3 | 1.147 ±82.9% |
+| `ijk-ilk-jl` | 4.0358 | 3.9467 | 5.6298 | 104.8/0.3 | 0.717 ±82.9% |
+| `ijk-ilk-lj` | 4.0005 | 4.0452 | 5.8603 | 104.6/0.3 | 0.683 ±82.9% |
+| `ijk-ilmk-mjl` | 2.1780 | 2.1813 | 3.6529 | 27.9/0.2 | 0.596 ±82.9% |
+| `ijkl-imjn-lnkm` | 66.4639 | 66.3883 | 66.7284 | 43.0/0.2 | 0.996 ±82.9% |
+| `ijkl-imjn-nlmk` | 66.2602 | 66.1960 | 68.1091 | 40.9/0.2 | 0.973 ±82.9% |
+| `ijkl-imkn-jnlm` | 65.2049 | 65.6603 | 67.5418 | 41.0/0.2 | 0.965 ±82.9% |
+| `ijkl-imkn-njml` | 66.4435 | 66.4758 | 67.5900 | 40.6/0.2 | 0.983 ±82.9% |
+| `ijkl-imln-jnkm` | 65.5645 | 65.6656 | 66.6906 | 39.5/0.2 | 0.983 ±82.9% |
+| `ijkl-imln-njmk` | 66.2798 | 66.3499 | 67.2741 | 40.5/0.2 | 0.985 ±82.9% |
+| `ijkl-imnj-nlkm` | 67.2365 | 67.3769 | 66.0626 | 41.8/0.1 | 1.018 ±82.9% |
+| `ijkl-imnk-njml` | 66.7026 | 66.6864 | 66.4669 | 40.0/0.2 | 1.004 ±82.9% |
+| `ijkl-minj-nlmk` | 80.5632 | 80.5454 | 82.3023 | 40.9/0.1 | 0.979 ±82.9% |
+| `ijkl-mink-jnlm` | 79.8568 | 79.5210 | 79.9330 | 41.7/0.2 | 0.999 ±82.9% |
+| `ijkl-minl-njmk` | 80.0647 | 80.1286 | 83.0710 | 41.0/0.2 | 0.964 ±82.9% |
+| **geomean** | 9.0810 | 9.1468 | 11.6632 | 69.7/0.2 | 0.779 ±82.9% |
+
+## 16 MiB, c64, 1T (CPU 4)
+
+| case | tprims [plan] (ms) | tprims [packed] (ms) | tblis (ms) | prepare (µs) | tprims [plan] / tblis |
+|---|---|---|---|---|---|
+| `abc-bk-akc` | 57.2537 | 57.2163 | 71.7045 | 116.1/0.3 | 0.798 ±3.6% |
+| `abcijk-eiab-jkec` | 54.1996 | 54.2319 | 67.9927 | 47.1/0.2 | 0.797 ±3.6% |
+| `abcijk-eiac-jkeb` | 53.4162 | 53.3858 | 85.9826 | 51.8/0.2 | 0.621 ±3.6% |
+| `abcijk-eibc-jkea` | 54.3725 | 54.3771 | 61.8976 | 67.6/0.2 | 0.878 ±3.6% |
+| `abcijk-ejab-ikec` | 53.8056 | 53.8740 | 66.6592 | 47.3/0.2 | 0.807 ±3.6% |
+| `abcijk-ejac-ikeb` | 53.3492 | 53.3010 | 67.7895 | 52.5/0.2 | 0.787 ±3.6% |
+| `abcijk-ejbc-ikea` | 54.2119 | 54.2406 | 61.9266 | 66.1/0.1 | 0.875 ±3.6% |
+| `abcijk-ekab-ijec` | 53.7743 | 53.8535 | 57.5601 | 48.6/0.1 | 0.934 ±3.6% |
+| `abcijk-ekac-ijeb` | 53.3253 | 53.3106 | 65.7306 | 52.2/0.2 | 0.811 ±3.6% |
+| `abcijk-ekbc-ijea` | 54.1264 | 54.1772 | 61.8934 | 65.2/0.2 | 0.875 ±3.6% |
+| `abcijk-ijma-mkbc` | 54.2248 | 54.2032 | 61.7592 | 65.0/0.2 | 0.878 ±3.6% |
+| `abcijk-ijmb-mkac` | 53.3837 | 53.4270 | 65.6729 | 52.4/0.2 | 0.813 ±3.6% |
+| `abcijk-ijmc-mkab` | 53.9955 | 53.9861 | 57.4875 | 47.7/0.2 | 0.939 ±3.6% |
+| `abcijk-ikma-mjbc` | 54.3865 | 54.2390 | 61.9992 | 65.9/0.2 | 0.877 ±3.6% |
+| `abcijk-ikmb-mjac` | 53.3765 | 53.3906 | 69.3852 | 53.0/0.2 | 0.769 ±3.6% |
+| `abcijk-ikmc-mjab` | 54.0431 | 54.0473 | 66.3919 | 46.3/0.1 | 0.814 ±3.6% |
+| `abcijk-jkma-mibc` | 54.2963 | 54.2708 | 61.9649 | 66.4/0.2 | 0.876 ±3.6% |
+| `abcijk-jkmb-miac` | 53.6081 | 53.5898 | 86.3663 | 53.2/0.2 | 0.621 ±3.6% |
+| `abcijk-jkmc-miab` | 54.2495 | 54.3048 | 67.3067 | 46.4/0.2 | 0.806 ±3.6% |
+| `abcs-rc-abrs` | 32.0050 | 31.9549 | 40.2133 | 378.0/0.2 | 0.796 ±3.6% |
+| `abj-bka-kj` | 72.6659 | 72.6688 | 97.8580 | 134.3/0.3 | 0.743 ±3.6% |
+| `abjc-cbka-kj` | 56.8468 | 56.6914 | 62.0018 | 745.2/0.2 | 0.917 ±3.6% |
+| `abjc-kbac-jk` | 39.4565 | 39.6149 | 52.8601 | 609.8/0.2 | 0.746 ±3.6% |
+| `abjcd-dkbac-jk` | 43.0493 | 43.0510 | 44.8569 | 1594.1/0.3 | 0.960 ±3.6% |
+| `abrs-qb-aqrs` | 33.1692 | 32.1960 | 40.3950 | 603.5/0.3 | 0.821 ±3.6% |
+| `adbjc-cbdka-kj` | 55.8344 | 55.7143 | 48.2524 | 1586.9/0.2 | 1.157 ±3.6% |
+| `ajb-kba-jk` | 64.1334 | 64.1761 | 74.3563 | 108.3/0.2 | 0.863 ±3.6% |
+| `ajbc-ckba-jk` | 48.5536 | 48.5216 | 42.5128 | 774.7/0.2 | 1.142 ±3.6% |
+| `ajbdc-ckbad-jk` | 42.7136 | 42.6693 | 44.8809 | 1617.2/0.3 | 0.952 ±3.6% |
+| `aqrs-pa-pqrs` | 31.2197 | 31.2011 | 41.2816 | 227.9/0.2 | 0.756 ±3.6% |
+| `ij-ik-kj` | 506.1479 | 506.0737 | 532.4329 | 17.7/0.2 | 0.951 ±3.6% |
+| `ij-ikl-ljk` | 64.9261 | 64.7851 | 82.2063 | 48.4/0.3 | 0.790 ±3.6% |
+| `ij-kil-lkj` | 76.1419 | 76.2042 | 99.8945 | 47.8/0.2 | 0.762 ±3.6% |
+| `ijk-ikl-lj` | 59.5643 | 59.6121 | 75.1305 | 105.3/0.2 | 0.793 ±3.6% |
+| `ijk-il-jlk` | 58.0177 | 58.0316 | 63.9906 | 117.4/0.4 | 0.907 ±3.6% |
+| `ijk-ilk-jl` | 57.4189 | 57.4407 | 69.4680 | 107.1/0.3 | 0.827 ±3.6% |
+| `ijk-ilk-lj` | 59.0831 | 59.0901 | 71.1927 | 109.1/0.2 | 0.830 ±3.6% |
+| `ijk-ilmk-mjl` | 30.6114 | 30.6351 | 41.8263 | 29.0/0.1 | 0.732 ±3.6% |
+| `ijkl-imjn-lnkm` | 972.8302 | 973.1521 | 1055.8714 | 43.1/0.2 | 0.921 ±3.6% |
+| `ijkl-imjn-nlmk` | 976.4104 | 976.1356 | 1058.6254 | 41.6/0.2 | 0.922 ±3.6% |
+| `ijkl-imkn-jnlm` | 977.4953 | 977.2416 | 1041.8042 | 43.4/0.1 | 0.938 ±3.6% |
+| `ijkl-imkn-njml` | 984.1458 | 984.1508 | 1053.4228 | 42.2/0.1 | 0.934 ±3.6% |
+| `ijkl-imln-jnkm` | 975.2240 | 974.3943 | 1052.8047 | 43.9/0.1 | 0.926 ±3.6% |
+| `ijkl-imln-njmk` | 981.6140 | 980.5353 | 1049.9791 | 46.4/0.1 | 0.935 ±3.6% |
+| `ijkl-imnj-nlkm` | 973.9814 | 973.6251 | 1047.3228 | 44.2/0.1 | 0.930 ±3.6% |
+| `ijkl-imnk-njml` | 982.6602 | 982.9207 | 1049.4960 | 41.9/0.2 | 0.936 ±3.6% |
+| `ijkl-minj-nlmk` | 1179.6990 | 1180.1811 | 1257.2928 | 45.5/0.2 | 0.938 ±3.6% |
+| `ijkl-mink-jnlm` | 1177.1138 | 1177.6344 | 1254.2584 | 43.2/0.2 | 0.938 ±3.6% |
+| `ijkl-minl-njmk` | 1184.0600 | 1183.8302 | 1239.3925 | 44.4/0.1 | 0.955 ±3.6% |
+| **geomean** | 106.0754 | 106.0018 | 123.7401 | 89.6/0.2 | 0.857 ±3.6% |
+
+## 16 MiB, c64, 4T (CPU 4-7)
+
+| case | tprims [plan] (ms) | tprims [packed] (ms) | tblis (ms) | prepare (µs) | tprims [plan] / tblis |
+|---|---|---|---|---|---|
+| `abc-bk-akc` | 14.6241 | 14.6648 | 19.0053 | 115.6/0.3 | 0.769 ±98.7% |
+| `abcijk-eiab-jkec` | 14.1653 | 14.1719 | 23.1281 | 47.6/0.2 | 0.612 ±98.7% |
+| `abcijk-eiac-jkeb` | 13.6480 | 13.5989 | 27.9677 | 52.9/0.2 | 0.488 ±98.7% |
+| `abcijk-eibc-jkea` | 13.9110 | 13.8807 | 15.8264 | 66.6/0.2 | 0.879 ±98.7% |
+| `abcijk-ejab-ikec` | 13.9360 | 13.9086 | 18.8407 | 50.9/0.2 | 0.740 ±98.7% |
+| `abcijk-ejac-ikeb` | 13.5422 | 13.5226 | 18.3257 | 53.4/0.2 | 0.739 ±98.7% |
+| `abcijk-ejbc-ikea` | 13.8526 | 13.8413 | 15.8285 | 65.9/0.1 | 0.875 ±98.7% |
+| `abcijk-ekab-ijec` | 13.8952 | 13.8865 | 15.4878 | 48.2/0.2 | 0.897 ±98.7% |
+| `abcijk-ekac-ijeb` | 13.4370 | 13.5624 | 20.6797 | 56.2/0.2 | 0.650 ±98.7% |
+| `abcijk-ekbc-ijea` | 13.8352 | 13.8790 | 15.7845 | 66.0/0.2 | 0.877 ±98.7% |
+| `abcijk-ijma-mkbc` | 13.8723 | 13.8915 | 15.8574 | 67.0/0.2 | 0.875 ±98.7% |
+| `abcijk-ijmb-mkac` | 13.4788 | 13.4781 | 20.6031 | 53.3/0.2 | 0.654 ±98.7% |
+| `abcijk-ijmc-mkab` | 13.8943 | 13.9159 | 15.2192 | 47.8/0.2 | 0.913 ±98.7% |
+| `abcijk-ikma-mjbc` | 13.8785 | 13.8945 | 15.8498 | 65.8/0.2 | 0.876 ±98.7% |
+| `abcijk-ikmb-mjac` | 13.5559 | 13.4856 | 18.2466 | 53.7/0.2 | 0.743 ±98.7% |
+| `abcijk-ikmc-mjab` | 13.8792 | 13.8899 | 18.6618 | 46.7/0.2 | 0.744 ±98.7% |
+| `abcijk-jkma-mibc` | 13.8835 | 13.9076 | 15.8433 | 66.5/0.2 | 0.876 ±98.7% |
+| `abcijk-jkmb-miac` | 13.5449 | 13.5479 | 28.1543 | 53.3/0.2 | 0.481 ±98.7% |
+| `abcijk-jkmc-miab` | 14.1719 | 14.1558 | 23.2893 | 46.7/0.1 | 0.609 ±98.7% |
+| `abcs-rc-abrs` | 8.4206 | 8.5334 | 12.2841 | 390.8/0.2 | 0.685 ±98.7% |
+| `abj-bka-kj` | 19.1867 | 19.1246 | 26.7171 | 129.3/0.3 | 0.718 ±98.7% |
+| `abjc-cbka-kj` | 20.1257 | 20.1248 | 19.5434 | 721.7/0.2 | 1.030 ±98.7% |
+| `abjc-kbac-jk` | 10.2608 | 10.1483 | 18.0006 | 585.0/0.2 | 0.570 ±98.7% |
+| `abjcd-dkbac-jk` | 13.2908 | 13.4724 | 13.7700 | 1592.3/0.2 | 0.965 ±98.7% |
+| `abrs-qb-aqrs` | 8.5170 | 8.4668 | 11.7452 | 613.0/0.3 | 0.725 ±98.7% |
+| `adbjc-cbdka-kj` | 21.4261 | 20.8886 | 18.6566 | 1589.9/0.2 | 1.148 ±98.7% |
+| `ajb-kba-jk` | 16.4474 | 16.5199 | 19.9901 | 106.2/0.3 | 0.823 ±98.7% |
+| `ajbc-ckba-jk` | 13.3530 | 13.4003 | 13.9431 | 715.0/0.2 | 0.958 ±98.7% |
+| `ajbdc-ckbad-jk` | 12.8518 | 12.9392 | 12.8883 | 1611.3/0.2 | 0.997 ±98.7% |
+| `aqrs-pa-pqrs` | 8.1334 | 8.1121 | 10.5333 | 242.2/0.2 | 0.772 ±98.7% |
+| `ij-ik-kj` | 128.8048 | 128.8261 | 135.1633 | 17.6/0.3 | 0.953 ±98.7% |
+| `ij-ikl-ljk` | 22.8675 | 22.8698 | 23.1929 | 47.6/0.4 | 0.986 ±98.7% |
+| `ij-kil-lkj` | 26.5437 | 26.5851 | 28.3371 | 47.9/0.3 | 0.937 ±98.7% |
+| `ijk-ikl-lj` | 15.3741 | 15.3432 | 20.0381 | 105.8/0.3 | 0.767 ±98.7% |
+| `ijk-il-jlk` | 19.7115 | 19.7285 | 16.2664 | 113.9/0.3 | 1.212 ±98.7% |
+| `ijk-ilk-jl` | 14.6400 | 14.6265 | 18.3479 | 106.0/0.3 | 0.798 ±98.7% |
+| `ijk-ilk-lj` | 15.1333 | 15.4478 | 18.8939 | 106.2/0.3 | 0.801 ±98.7% |
+| `ijk-ilmk-mjl` | 8.3462 | 8.3654 | 10.9313 | 29.7/0.2 | 0.764 ±98.7% |
+| `ijkl-imjn-lnkm` | 257.8819 | 249.4488 | 262.8010 | 45.7/0.2 | 0.981 ±98.7% |
+| `ijkl-imjn-nlmk` | 248.8140 | 248.7050 | 264.3824 | 44.6/0.1 | 0.941 ±98.7% |
+| `ijkl-imkn-jnlm` | 248.0642 | 248.1488 | 262.9913 | 44.0/0.2 | 0.943 ±98.7% |
+| `ijkl-imkn-njml` | 249.7165 | 249.5790 | 265.8248 | 43.1/0.2 | 0.939 ±98.7% |
+| `ijkl-imln-jnkm` | 247.7126 | 247.6766 | 265.6056 | 44.8/0.2 | 0.933 ±98.7% |
+| `ijkl-imln-njmk` | 249.0915 | 249.2621 | 265.0903 | 43.3/0.2 | 0.940 ±98.7% |
+| `ijkl-imnj-nlkm` | 248.9680 | 249.0374 | 263.6676 | 43.3/0.2 | 0.944 ±98.7% |
+| `ijkl-imnk-njml` | 249.7397 | 249.7428 | 261.5033 | 42.8/0.1 | 0.955 ±98.7% |
+| `ijkl-minj-nlmk` | 300.7377 | 301.0077 | 319.0810 | 44.3/0.2 | 0.943 ±98.7% |
+| `ijkl-mink-jnlm` | 299.2390 | 298.9186 | 316.2930 | 44.4/0.2 | 0.946 ±98.7% |
+| `ijkl-minl-njmk` | 300.1588 | 300.0967 | 314.6003 | 44.1/0.2 | 0.954 ±98.7% |
+| **geomean** | 28.3922 | 28.3853 | 34.2692 | 89.9/0.2 | 0.829 ±98.7% |
