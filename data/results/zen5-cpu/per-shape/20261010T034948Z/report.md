@@ -1,15 +1,13 @@
-<!-- generated from data/results/zen5-cpu/per-shape/20261010T032142Z/report.md by scripts/publish_report.py; the report below is the source of truth -->
-
 # `per-shape` on `zen5-cpu`
 
-- tprims-rs commit: `0ec98136c4c894c00013f25b3c99e4a46097e7e9`
+- tprims-rs commit: `63d7aac1dce53271304fafa3f039726363ac3d05`
 - features: `tblis`
 - harness commit: `921ecf5e81757a49085b7570a0c9eb703bf0b599`
 - hardware profile: `zen5-cpu`
-- timestamp: `2026-10-10T03:28:39.253080Z`
+- timestamp: `2026-10-10T03:56:45.097213Z`
 - timing policy: v1, best of 5 reps, priming 1500 ms
 - command: `scripts/record_run.py zen5-cpu per-shape --jobs 24 --aa 2`
-- raw data: `data/results/zen5-cpu/per-shape/20261010T032142Z/`
+- raw data: `data/results/zen5-cpu/per-shape/20261010T034948Z/`
 ## What was measured
 
 - **Corpus `per-shape contraction set`** — Twenty-one cases in four families: `ikb,knb->inb` f64 with i = k = n in {2,4,8,16} and batch in {16,64,256}; `ijk,jkl->il` f64 8x16x8x8; `ij,jk->ik` c64 n = 32 and f64 n = 64; `ij,jk,kl->il` f64 n = 64 in the fixed pairwise order ((ij,jk),kl); and a c64 MPS chain of 32 sites at uniform bond dimension chi in {4,8,16,32,64}, two steps per site and one timed call per whole chain. They range from an overhead-dominated 0.9 us to a 4.8 ms chain, which is the point of the set: the ranking of engines changes across it.
@@ -46,68 +44,70 @@ Every row below passed `lukbench verify` (known values and full-output residual 
 
 Where the independent reference ran, the last column is `tprims [plan] / tblis`, a ratio of those two geomeans: above 1 means tprims took longer. The `±` after it is the largest scatter among the repetitions behind it (the harness's `spread`, `(max - min) / best`), so a row whose ratio is smaller than its own scatter is not separable from noise. The same number is in the CSV's `spread` column for every row.
 
+`prepare (µs)` is what each side spends *before* the timed call - the plan for tprims, the operand descriptors for the reference. The timing policy excludes that work, which is why the harness can build a plan once and time only execution, and the reference has nothing comparable to hoist: its own analysis is inside the one call it exposes. On microsecond cases the preparation can exceed the whole timed call, so a ratio there compares a prepared path with a one-shot call rather than two kernels.
+
 ## fixed shapes, f64, 1T (CPU 4)
 
-| case | tprims [plan] (ms) | tprims [packed] (ms) | tblis (ms) | tprims [plan] / tblis |
-|---|---|---|---|---|
-| `ij_jk_ik_f64_n64` | 0.0104 | 0.0149 | 0.0289 | 0.361 ±8.5% |
-| `ij_jk_kl_il_n64` | 0.0208 | 0.0298 | 0.0579 | 0.360 ±8.5% |
-| `ijk_jkl_il_8x16x8` | 0.0006 | 0.0029 | 0.0095 | 0.058 ±8.5% |
-| `ikb_knb_inb_n16_b16` | 0.0038 | 0.0093 | 0.0721 | 0.052 ±8.5% |
-| `ikb_knb_inb_n16_b256` | 0.0600 | 0.1420 | 1.1126 | 0.054 ±8.5% |
-| `ikb_knb_inb_n16_b64` | 0.0144 | 0.0356 | 0.2804 | 0.051 ±8.5% |
-| `ikb_knb_inb_n2_b16` | 0.0005 | 0.0019 | 0.0528 | 0.009 ±8.5% |
-| `ikb_knb_inb_n2_b256` | 0.0048 | 0.0230 | 0.8048 | 0.006 ±8.5% |
-| `ikb_knb_inb_n2_b64` | 0.0013 | 0.0062 | 0.2031 | 0.007 ±8.5% |
-| `ikb_knb_inb_n4_b16` | 0.0007 | 0.0025 | 0.0539 | 0.012 ±8.5% |
-| `ikb_knb_inb_n4_b256` | 0.0077 | 0.0335 | 0.8248 | 0.009 ±8.5% |
-| `ikb_knb_inb_n4_b64` | 0.0020 | 0.0086 | 0.2101 | 0.010 ±8.5% |
-| `ikb_knb_inb_n8_b16` | 0.0009 | 0.0040 | 0.0584 | 0.016 ±8.5% |
-| `ikb_knb_inb_n8_b256` | 0.0116 | 0.0569 | 0.8855 | 0.013 ±8.5% |
-| `ikb_knb_inb_n8_b64` | 0.0032 | 0.0140 | 0.2225 | 0.014 ±8.5% |
-| **geomean** | 0.0037 | 0.0127 | 0.1472 | 0.025 ±8.5% |
+| case | tprims [plan] (ms) | tprims [packed] (ms) | tblis (ms) | prepare (µs) | tprims [plan] / tblis |
+|---|---|---|---|---|---|
+| `ij_jk_ik_f64_n64` | 0.0104 | 0.0149 | 0.0291 | 1.7/0.5 | 0.358 ±6.4% |
+| `ij_jk_kl_il_n64` | 0.0209 | 0.0298 | 0.0582 | 3.0/1.1 | 0.359 ±6.4% |
+| `ijk_jkl_il_8x16x8` | 0.0006 | 0.0030 | 0.0096 | 1.5/0.4 | 0.058 ±6.4% |
+| `ikb_knb_inb_n16_b16` | 0.0038 | 0.0095 | 0.0720 | 1.3/0.5 | 0.052 ±6.4% |
+| `ikb_knb_inb_n16_b256` | 0.0605 | 0.1407 | 1.1197 | 1.6/0.4 | 0.054 ±6.4% |
+| `ikb_knb_inb_n16_b64` | 0.0144 | 0.0359 | 0.2827 | 1.5/0.4 | 0.051 ±6.4% |
+| `ikb_knb_inb_n2_b16` | 0.0005 | 0.0019 | 0.0525 | 2.3/0.5 | 0.009 ±6.4% |
+| `ikb_knb_inb_n2_b256` | 0.0050 | 0.0223 | 0.8142 | 1.5/0.4 | 0.006 ±6.4% |
+| `ikb_knb_inb_n2_b64` | 0.0014 | 0.0061 | 0.2034 | 1.3/0.5 | 0.007 ±6.4% |
+| `ikb_knb_inb_n4_b16` | 0.0007 | 0.0024 | 0.0538 | 1.3/0.5 | 0.012 ±6.4% |
+| `ikb_knb_inb_n4_b256` | 0.0076 | 0.0318 | 0.8304 | 1.6/0.4 | 0.009 ±6.4% |
+| `ikb_knb_inb_n4_b64` | 0.0020 | 0.0083 | 0.2095 | 1.3/0.5 | 0.010 ±6.4% |
+| `ikb_knb_inb_n8_b16` | 0.0009 | 0.0039 | 0.0573 | 1.3/0.5 | 0.016 ±6.4% |
+| `ikb_knb_inb_n8_b256` | 0.0116 | 0.0539 | 0.8899 | 1.6/0.5 | 0.013 ±6.4% |
+| `ikb_knb_inb_n8_b64` | 0.0032 | 0.0141 | 0.2251 | 1.4/0.5 | 0.014 ±6.4% |
+| **geomean** | 0.0038 | 0.0126 | 0.1476 | 1.6/0.5 | 0.026 ±6.4% |
 
 ## fixed shapes, f64, 4T (CPU 4-7)
 
-| case | tprims [plan] (ms) | tprims [packed] (ms) | tblis (ms) | tprims [plan] / tblis |
-|---|---|---|---|---|
-| `ij_jk_ik_f64_n64` | 0.0104 | 0.0149 | 0.0197 | 0.531 ±22.6% |
-| `ij_jk_kl_il_n64` | 0.0208 | 0.0299 | 0.0382 | 0.546 ±22.6% |
-| `ijk_jkl_il_8x16x8` | 0.0006 | 0.0029 | 0.0121 | 0.046 ±22.6% |
-| `ikb_knb_inb_n16_b16` | 0.0038 | 0.0093 | 0.1270 | 0.030 ±22.6% |
-| `ikb_knb_inb_n16_b256` | 0.0182 | 0.0396 | 0.7214 | 0.025 ±22.6% |
-| `ikb_knb_inb_n16_b64` | 0.0144 | 0.0356 | 0.5455 | 0.026 ±22.6% |
-| `ikb_knb_inb_n2_b16` | 0.0005 | 0.0019 | 0.0184 | 0.026 ±22.6% |
-| `ikb_knb_inb_n2_b256` | 0.0050 | 0.0234 | 0.2272 | 0.022 ±22.6% |
-| `ikb_knb_inb_n2_b64` | 0.0014 | 0.0062 | 0.0608 | 0.023 ±22.6% |
-| `ikb_knb_inb_n4_b16` | 0.0007 | 0.0025 | 0.0417 | 0.016 ±22.6% |
-| `ikb_knb_inb_n4_b256` | 0.0076 | 0.0320 | 0.2346 | 0.032 ±22.6% |
-| `ikb_knb_inb_n4_b64` | 0.0021 | 0.0085 | 0.0617 | 0.033 ±22.6% |
-| `ikb_knb_inb_n8_b16` | 0.0009 | 0.0039 | 0.1018 | 0.009 ±22.6% |
-| `ikb_knb_inb_n8_b256` | 0.0117 | 0.0560 | 0.2478 | 0.047 ±22.6% |
-| `ikb_knb_inb_n8_b64` | 0.0032 | 0.0145 | 0.1639 | 0.019 ±22.6% |
-| **geomean** | 0.0035 | 0.0117 | 0.0920 | 0.038 ±22.6% |
+| case | tprims [plan] (ms) | tprims [packed] (ms) | tblis (ms) | prepare (µs) | tprims [plan] / tblis |
+|---|---|---|---|---|---|
+| `ij_jk_ik_f64_n64` | 0.0104 | 0.0149 | 0.0190 | 1.9/0.5 | 0.551 ±51.7% |
+| `ij_jk_kl_il_n64` | 0.0208 | 0.0298 | 0.0390 | 2.9/1.0 | 0.534 ±51.7% |
+| `ijk_jkl_il_8x16x8` | 0.0006 | 0.0029 | 0.0127 | 1.5/0.6 | 0.044 ±51.7% |
+| `ikb_knb_inb_n16_b16` | 0.0037 | 0.0092 | 0.1387 | 1.5/0.6 | 0.027 ±51.7% |
+| `ikb_knb_inb_n16_b256` | 0.0176 | 0.0397 | 0.7270 | 1.9/0.6 | 0.024 ±51.7% |
+| `ikb_knb_inb_n16_b64` | 0.0145 | 0.0349 | 0.5384 | 1.8/0.4 | 0.027 ±51.7% |
+| `ikb_knb_inb_n2_b16` | 0.0005 | 0.0019 | 0.0183 | 2.3/0.5 | 0.026 ±51.7% |
+| `ikb_knb_inb_n2_b256` | 0.0050 | 0.0222 | 0.2311 | 2.3/0.4 | 0.022 ±51.7% |
+| `ikb_knb_inb_n2_b64` | 0.0014 | 0.0060 | 0.0614 | 1.7/0.5 | 0.023 ±51.7% |
+| `ikb_knb_inb_n4_b16` | 0.0006 | 0.0025 | 0.0415 | 1.6/0.6 | 0.016 ±51.7% |
+| `ikb_knb_inb_n4_b256` | 0.0075 | 0.0317 | 0.2374 | 1.9/0.4 | 0.032 ±51.7% |
+| `ikb_knb_inb_n4_b64` | 0.0020 | 0.0084 | 0.0625 | 1.6/0.5 | 0.032 ±51.7% |
+| `ikb_knb_inb_n8_b16` | 0.0009 | 0.0038 | 0.0998 | 1.5/0.5 | 0.009 ±51.7% |
+| `ikb_knb_inb_n8_b256` | 0.0115 | 0.0542 | 0.2479 | 1.7/0.4 | 0.047 ±51.7% |
+| `ikb_knb_inb_n8_b64` | 0.0031 | 0.0140 | 0.1609 | 1.9/0.4 | 0.020 ±51.7% |
+| **geomean** | 0.0035 | 0.0115 | 0.0928 | 1.8/0.5 | 0.037 ±51.7% |
 
 ## fixed shapes, c64, 1T (CPU 4)
 
-| case | tprims [plan] (ms) | tprims [packed] (ms) | tblis (ms) | tprims [plan] / tblis |
-|---|---|---|---|---|
-| `ij_jk_ik_c64_n32` | 0.0055 | 0.0079 | 0.0147 | 0.372 ±3.6% |
-| `mps_chain_L32_chi16` | 0.1038 | 0.1816 | 0.5361 | 0.194 ±3.6% |
-| `mps_chain_L32_chi32` | 0.7013 | 0.9510 | 1.5197 | 0.461 ±3.6% |
-| `mps_chain_L32_chi4` | 0.0228 | 0.0454 | 0.3095 | 0.074 ±3.6% |
-| `mps_chain_L32_chi64` | 6.8075 | 6.7888 | 8.7954 | 0.774 ±3.6% |
-| `mps_chain_L32_chi8` | 0.0403 | 0.0718 | 0.3538 | 0.114 ±3.6% |
-| **geomean** | 0.1164 | 0.1765 | 0.4751 | 0.245 ±3.6% |
+| case | tprims [plan] (ms) | tprims [packed] (ms) | tblis (ms) | prepare (µs) | tprims [plan] / tblis |
+|---|---|---|---|---|---|
+| `ij_jk_ik_c64_n32` | 0.0054 | 0.0080 | 0.0147 | 1.6/0.5 | 0.370 ±7.5% |
+| `mps_chain_L32_chi16` | 0.1044 | 0.1846 | 0.5384 | 58.4/24.2 | 0.194 ±7.5% |
+| `mps_chain_L32_chi32` | 0.7023 | 0.9568 | 1.5253 | 61.2/24.2 | 0.460 ±7.5% |
+| `mps_chain_L32_chi4` | 0.0228 | 0.0464 | 0.3119 | 58.5/22.9 | 0.073 ±7.5% |
+| `mps_chain_L32_chi64` | 6.8099 | 6.8181 | 8.8711 | 419.8/26.3 | 0.768 ±7.5% |
+| `mps_chain_L32_chi8` | 0.0402 | 0.0748 | 0.3567 | 60.2/24.3 | 0.113 ±7.5% |
+| **geomean** | 0.1164 | 0.1796 | 0.4780 | 44.9/12.7 | 0.244 ±7.5% |
 
 ## fixed shapes, c64, 4T (CPU 4-7)
 
-| case | tprims [plan] (ms) | tprims [packed] (ms) | tblis (ms) | tprims [plan] / tblis |
-|---|---|---|---|---|
-| `ij_jk_ik_c64_n32` | 0.0055 | 0.0081 | 0.0134 | 0.407 ±28.1% |
-| `mps_chain_L32_chi16` | 0.1043 | 0.1833 | 0.7996 | 0.131 ±28.1% |
-| `mps_chain_L32_chi32` | 0.6996 | 0.9501 | 1.1092 | 0.631 ±28.1% |
-| `mps_chain_L32_chi4` | 0.0222 | 0.0457 | 0.5902 | 0.038 ±28.1% |
-| `mps_chain_L32_chi64` | 2.5732 | 2.5882 | 3.6501 | 0.705 ±28.1% |
-| `mps_chain_L32_chi8` | 0.0394 | 0.0728 | 0.7225 | 0.055 ±28.1% |
-| **geomean** | 0.0983 | 0.1516 | 0.5145 | 0.191 ±28.1% |
+| case | tprims [plan] (ms) | tprims [packed] (ms) | tblis (ms) | prepare (µs) | tprims [plan] / tblis |
+|---|---|---|---|---|---|
+| `ij_jk_ik_c64_n32` | 0.0055 | 0.0080 | 0.0137 | 2.0/0.7 | 0.399 ±20.1% |
+| `mps_chain_L32_chi16` | 0.1041 | 0.1838 | 0.7846 | 61.6/24.2 | 0.133 ±20.1% |
+| `mps_chain_L32_chi32` | 0.6985 | 0.9559 | 1.1619 | 60.8/24.2 | 0.601 ±20.1% |
+| `mps_chain_L32_chi4` | 0.0221 | 0.0466 | 0.5630 | 57.9/22.8 | 0.039 ±20.1% |
+| `mps_chain_L32_chi64` | 2.6156 | 2.5704 | 3.6565 | 420.0/27.9 | 0.715 ±20.1% |
+| `mps_chain_L32_chi8` | 0.0395 | 0.0778 | 0.6927 | 61.4/24.4 | 0.057 ±20.1% |
+| **geomean** | 0.0984 | 0.1536 | 0.5111 | 47.4/13.7 | 0.192 ±20.1% |

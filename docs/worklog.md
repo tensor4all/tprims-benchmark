@@ -363,3 +363,78 @@ The 2026-10-09 cells stay as history. They were recorded without the third arm a
 without a per-row scatter, so their rows cannot be quoted against an outside
 implementation and their cross-arm margins cannot be separated from noise; the two
 cells in this change are the ones to read.
+
+## 2026-10-10 why the reference looks slow in the per-shape cell: setup, not kernels
+
+The per-shape cell reports `tprims [plan] / tblis` down to 0.006, i.e. "tprims is 170
+times faster". That is true and it is not a statement about kernels: the reference
+pays a fixed cost per contraction that the prepared path does not pay at all.
+
+Measured from the cell's own rows, per contraction:
+
+| corpus family | tprims [plan] | tblis | note |
+|---|---|---|---|
+| batched `ikb_knb_inb`, 1T | 0.019-0.23 us | **3.2-4.5 us** | the same for n=2 and n=16, and for batch 16 and 256 |
+| MPS chain, 64 steps per call, 1T | 0.34-1.6 us | **4.5-6.7 us** | chi 4, 8, 16; at chi=64 the reference is 133 us/step, i.e. compute-bound |
+
+A cost that does not move with the problem size is setup, and the ratio's median by
+case size says the same thing: **0.016** below 1 us, 0.021 in 1-10 us, 0.054 in
+10-100 us, 0.329 in 100 us-1 ms, **0.747** above 1 ms. Where the contraction is big
+enough to be compute-bound the two libraries are close; where it is not, the column
+measures how much cheaper it is to keep a plan than to call a library.
+
+Why the boundary is asymmetric, and it is structural rather than a harness bug:
+the timing policy excludes plan and descriptor construction, which is exactly what
+`Plan` is for and why the harness can hoist it; TBLIS 2.0 exposes no prepared
+contraction at all - `tblis.h` has `tblis_tensor_mult` plus C++ view wrappers, nothing
+to hoist - so its analysis is necessarily inside the timed call. Both arms build only
+descriptors inside the region (tprims a `StridedView` per step, the reference three
+`tblis_tensor` headers per call).
+
+The suite now carries this as a `known_blind_spot`, so the page says it beside the
+column, and the cell is re-recorded for that declaration alone. The practical reading:
+**use the per-shape column for small-contraction setup behaviour, and the tcbench
+column - 16 MiB, 5-250 ms calls, where the same reference is at parity or up to 1.5x
+ahead - for kernel efficiency.** That is also where the work to match the reference
+belongs, and it is not a small-size effect.
+
+## 2026-10-10 the preparation the timing policy excludes is now a recorded column
+
+The policy excludes plan and descriptor construction, which is what lets the harness
+build a `Plan` once and time only `execute`. That exclusion is the whole reason this
+library looks fast on microsecond cases, and until now the record said nothing about
+its size. The harness now times it and writes `prepare_s` per row (tprims-rs #96): the
+plan for tprims's arms, the operand descriptors for the reference. Everything below is
+measured at the pin of the cells that follow.
+
+| case | arm | timed call | preparation |
+|---|---|---|---|
+| `abjc-cbka-kj` f64 1T, 1 MiB | plan | 0.57 ms | 137 us |
+| `abjc-cbka-kj` f64 1T, 4 MiB | plan | 17.9 ms | 989 us |
+| `abjc-cbka-kj` f64 1T, 16 MiB | plan | 38.3 ms | **1431 us** |
+| `abjc-cbka-kj` f64 1T, 16 MiB | packed | 38.2 ms | 993 us |
+| `mps_chain_L32_chi4` | plan | 0.023 ms | 59 us |
+| `mps_chain_L32_chi4` | packed | 0.050 ms | **355 us** |
+| `mps_chain_L32_chi4` | tblis | 0.308 ms | 23 us |
+| `ikb_knb_inb_n16_b16` | plan | 0.0037 ms | 1.3 us |
+| `ikb_knb_inb_n16_b16` | tblis | 0.071 ms | 0.6 us |
+
+Three things follow, and the first two are new.
+
+- **Preparation is microseconds per plan on the fixed-shape corpus**, about 1 us per
+  step: 59-62 us for a 64-step MPS chain. That is the order the harness was designed
+  around, and it is now visible per case.
+- **On the smallest cases the preparation is larger than the whole timed call.** At
+  `mps_chain_L32_chi4` the `packed` arm prepares for 355 us and then executes in 50 us,
+  while the reference's entire one-shot call is 308 us. So the per-shape ratio on
+  microsecond cases compares a prepared path with a one-shot call, and the blind-spot
+  note the suite gained says exactly that with this number behind it.
+- **On the TCCG corpus preparation scales with the problem** - 137 us at 1 MiB to
+  1.43 ms at 16 MiB - so it is allocation or analysis proportional to the extents. It
+  is 2.6-3.7% of that case's call, which is why the cells may exclude it, but a reader
+  is entitled to the number rather than to the assumption that it is negligible.
+
+What has not changed: what is timed. The exclusion stands; the record stops hiding
+its size. The reference still cannot be helped here - TBLIS 2.0 exposes no prepared
+contraction, so its analysis is inside the call and `prepare_s` for its rows is only
+the descriptors it builds outside, 0.4-0.5 us per step.

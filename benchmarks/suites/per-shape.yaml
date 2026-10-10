@@ -42,6 +42,17 @@ corpus:
     - "One size per case: a ratio here says nothing about a neighbouring size, and the set is not a sweep."
     - "An MPS chain is one timed call per whole chain, so a per-step cost is a derived quantity, not a measurement."
     - "The corpus is regular by construction: contiguous column-major operands, one batch axis at most, no strided or transposed layouts."
+    - >-
+      The ratio against the reference compares a prepared plan with a one-shot
+      library call. TBLIS 2.0 exposes no prepared-contraction entry point (`tblis.h`
+      has `tblis_tensor_mult` and C++ view wrappers, nothing to hoist), so its own
+      contraction analysis runs inside the timed call, while tprims's `Plan` is
+      constructed outside it by the timing policy. Measured on this host, the
+      reference pays a fixed 3.2-4.5 us per contraction at 1T - the same for a 2x2x2
+      batch element as for a 16x16x16 one - against 0.02-0.23 us for the prepared
+      path, so on the smallest cases this column reports setup, not kernel
+      efficiency: the ratio's median is 0.016 for cases under 1 us and 0.75 above
+      1 ms, where compute finally dominates.
 engines_doc:
   plan:
     label: tprims [plan]
