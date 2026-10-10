@@ -4,10 +4,15 @@ description: >-
   The TCCG 49-case tensor-contraction corpus: the only corpus here with rank-3 to
   rank-6 contractions, so it is kept for the irregular strides the packed driver's
   scatter path exists for. It is measured at one size and two widths, against the
-  planner's own route and the forced packed driver only — the lineage baseline
-  (tensorprimitives-rs) and the third width are retired, see docs/worklog.md.
-# Arms retired from this suite, with reasons in docs/worklog.md: TBLIS (needs an
-# external install and could not name its own revision), tensorprimitives-rs
+  planner's own route, the forced packed driver, and TBLIS as the independent
+  reference — the lineage baseline (tensorprimitives-rs) and the third width are
+  retired, see docs/worklog.md.
+# Restored: TBLIS. It was retired when it could not name its own revision; it now can
+# (`benchmarks/scripts/build_tblis.sh` records a release tag, its commit, the bundled
+# BLIS revision and an artifact hash), and without it this suite has no independent
+# reference, so a reader cannot tell a competitive tprims number from a
+# self-consistent one. See docs/worklog.md for the reversal.
+# Arms retired from this suite, with reasons in docs/worklog.md: tensorprimitives-rs
 # (the project this library was extracted from, so a lineage baseline rather
 # than an independent one), the 8-thread width and the 1 MiB size (both cost a
 # third of a run each to measure the same question twice).
@@ -25,7 +30,8 @@ invalidated_by:
 stale_after: 20
 required_profiles:
   - zen5-cpu
-features: []
+features:
+  - tblis
 corpus:
   name: TCCG
   description: >-
@@ -59,10 +65,23 @@ engines_doc:
       diagnostic arm: it shows what the planner's non-packed routes buy or cost
       on the same inputs.
     identity: tprims-rs (this repository's pinned revision)
+  tblis:
+    label: tblis
+    provider: tblis
+    summary: >-
+      Actual C++ TBLIS through the direct FFI adapter, as the independent third-party
+      reference implementation. Pinned by release tag, not by a local revision:
+      `benchmarks/scripts/build_tblis.sh` of the measured checkout builds it from the
+      tag and writes the PROVENANCE this repository records.
+    identity: TBLIS v2.0-beta2 (the only tagged 2.0; its commit and the BLIS revision are recorded per run)
+    caveat: >-
+      Needs an install prefix (`TBLIS_ROOT`), and TBLIS 2.x builds through CMake, so
+      the prefix cannot be made inside a bare checkout. The page repeats the tag,
+      commit, bundled BLIS revision and artifact hash the manifest recorded.
 
 runs:
   - threads: [1, 4]
     cpu_sets: ["4", "4-7"]
     sizes_mib: [16]
     dtypes: [f64, c64]
-    engines: [plan, packed]
+    engines: [plan, packed, tblis]

@@ -1,0 +1,102 @@
+schema_version: 1
+target_profile: zen5-cpu
+suite_id: per-shape
+suite_file: benchmarks/suites/per-shape.yaml
+suite_sha256: e0242a641fa9d37a6dc9da4d12bf3ce15a28cc71eb1a8b7becbe4e233ebf7a0a
+timestamp: '2026-10-10T01:01:08.690179Z'
+command: scripts/record_run.py zen5-cpu per-shape --jobs 24
+tprims:
+  url: https://github.com/tensor4all/tprims-rs
+  commit: 0ec98136c4c894c00013f25b3c99e4a46097e7e9
+  dirty: false
+  features:
+  - tblis
+  measured_path: /tmp/tprims-0ec98136c4c8
+build_jobs: 24
+harness:
+  commit: 3b0a8420d01453fbe5c72935e91e10ce80989deb
+  dirty: true
+host:
+  hostname: shinaoka-EVO-X1Pro
+  cpu: AMD Ryzen AI 9 HX 470
+  os: Linux 7.0.0-38-generic
+  arch: x86_64
+  logical_cpus: 24
+  l3: 24 MiB (2 instances)
+  l3_domains: '0-3: 16 MiB shared; 4-11: 8 MiB shared'
+  notes: 'AMD Ryzen AI 9 HX 470 (Zen5 mobile APU), 12 physical / 24 logical cores.
+    Heterogeneous L3: CPUs 0-3 share 16 MiB, CPUs 4-11 share 8 MiB, so a thread set
+    must be stated together with the domain it sits in.'
+threads:
+  counts:
+  - 1
+  - 4
+  cpu_sets:
+    '1': '4'
+    '4': 4-7
+  env:
+    OMP_NUM_THREADS: null
+    RAYON_NUM_THREADS: null
+    OPENBLAS_NUM_THREADS: null
+    VECLIB_MAXIMUM_THREADS: null
+    MKL_NUM_THREADS: null
+timing_policy:
+  version: 1
+  minimum_untimed_priming_ms: 1500
+  statistic: best
+  repetitions: 5
+  notes: 'priming is time-based, not a call count: after an idle gate this host reports
+    up to 25% low for the first 1-2 s of sustained work. The value is the one the
+    harness reported, not the one this script asked for'
+guards:
+  idle_window_seconds: 3
+  max_busy_percent: 5
+  attempts: 3
+  logs:
+  - run0-fixed-1t.guard
+  - run0-fixed-4t.guard
+  - verify-fixed-1t.guard
+  - verify-fixed-4t.guard
+  outputs:
+  - run0-fixed-1t.out
+  - run0-fixed-4t.out
+  notes: the CPU set is checked together with the SMT siblings its physical cores
+    share, so a busy sibling fails the gate
+providers:
+- name: tprims
+  version: null
+  commit: null
+  path: null
+  note: the measured revision itself; see tprims above
+- name: tblis
+  version: '2.0'
+  commit: b16a732939d8454021e0a0f0097cf1cc1dd3ab19
+  path: /home/shinaoka/opt/tblis-v2.0-beta2-zen3
+  note: TBLIS 2.0, configuration zen3; bundled BLIS 358e689cadd6757f564a2992cf46a2f7d6fa6bb0;
+    built with ./configure --prefix=/home/shinaoka/opt/tblis-v2.0-beta2-zen3 --with-blis-config-family=zen3
+    (cmake, Unix Makefiles, Release); libtblis.so sha256 407b4f6fef7f4ede
+  tag: v2.0-beta2
+  sha256: 407b4f6fef7f4ede52a224cb33a987893dca37fe1177f5412b407bc93ea834e6
+invalidated_by:
+- crates/tprims-kernel/**
+- crates/tprims-contract/**
+- crates/tprims-exec/**
+- benchmarks/benchmarks/lukbench/**
+- benchmarks/src/**
+- Cargo.toml
+- Cargo.lock
+result_files:
+- run0-fixed-1t.csv
+- run0-fixed-4t.csv
+run_spec:
+  sizes_mib: []
+  fixed_shapes: true
+  dtypes:
+  - f64
+  - c64
+  engines:
+  - plan
+  - packed
+  - tblis
+  aa: 1
+  covers_declared_suite: true
