@@ -525,3 +525,44 @@ Two more things are ruled out, in addition to the three above:
 - **Nor is it the second operand.** `B` is contiguous for this case (`k` at stride 1,
   `n` at stride 48), and the output is contiguous in its runs; the interleaving is in `A`
   only.
+
+### How the instrument itself was caught being wrong
+
+The lead this record ends on - "the packing of strided folded axes" - is still a lead, and
+the attempt to confirm it produced two corrections worth keeping, because the same mistake
+is easy to repeat.
+
+An isolated experiment (`experiments/openblas-kernel`, tprims-rs#98) rebuilt this case's
+operand layouts from the plan's own axis record and measured four layout combinations. It
+came out 3.3x faster than the cell (11.6 ms against 38.1 ms) with the *same* family and
+blocking, which read as "a plan-level traversal decision is worth 3.3x" - and that is what
+was reported. It was wrong: two of the `m` axes have equal extent (48 and 48), the
+reconstruction swapped them, and the "corpus" variant was therefore *a different
+contraction*. Its tell was a residual of 1.4 against its own compact pair, which the binary
+had compared across differently permuted buffers and so could not see.
+
+Built instead from the harness's own `la`/`lb`/`lc` - read from the sized case, not
+reconstructed - the plan is **identical to the cell's** on every recorded field: family
+`avx512.f64.real.24x8`, mr/nr 24/8, blocking 264/1536/256, `StaticGrid{pm:0,pn:0}`,
+`align_c_lines: false`, and the same three `m` axes at `A`-strides (92160, 48, 1) with the
+contracted axis at 1920. So there is no plan difference to exploit, the 3.3x is retracted
+(tprims-rs#99), and the planner's axis ordering is **not** implicated.
+
+Two things the corrected measurements do say:
+
+- **The layout does not move this case.** With the true layouts, swapping `A` to a compact
+  `[m, k]` matrix and the output to a compact `[m, n]` matrix changes the time by 4% at most
+  (50.4-52.1 ms across four combinations). So the case is not simply "an interleaved panel
+  is expensive"; `A`'s contracted axis sitting at stride 1920 inside the `b`/`c` plane
+  (measured from the harness's `la`) is not, by itself, what the 1.5x is made of.
+- **The isolated experiment is not yet a valid instrument for this case**: it is 1.37x
+  slower than the cell (52 vs 38 ms) with the same plan, dimensions and layouts, because it
+  calls `execute_slices` (view construction per call) where the harness calls `execute_raw`.
+  Until that is closed, an experiment cannot attribute the cell's cost.
+
+So the phase-share measurement the design review asked for - A pack, kernel, write-back,
+setup, measured on the harness's own path - is still the next step, and no change to the
+planner is justified by anything measured so far. The stride-alignment sensitivity stands on
+its own: `--stress padded`, which only perturbs the leading dimension, is 1.9x faster
+(20.1 ms) and `ragged` 1.6x (21.2 ms), against 38.0 ms at the TCCG sizing that rounds
+stride-1 extents to multiples of 24.
