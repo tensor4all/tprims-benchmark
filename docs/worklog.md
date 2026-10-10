@@ -321,7 +321,9 @@ free of session drift):
   fails and the planner records `Reason::NotFusable`. Raising or lowering
   `FaerLimit` cannot change that: faer is not disfavoured here, it is unavailable.
 - **Not the gather/scatter path.** The rows report `regular_a`/`regular_b` of 1.00
-  (0.67/1.00 for two of the c64 ones), i.e. the packing is regular panels.
+  (0.67/1.00 for two of the c64 ones), i.e. the packing is regular panels, and the
+  measured rows already ran the non-gathering writeback - `TCBENCH_WRITEBACK=fast` is
+  the default and `gather` is what has to be asked for.
 - **Not the blocking model.** `TCBENCH_BLOCKMODEL=analytical` against the shipping
   `legacy` constants: packed/tblis 1.554 against 1.541 (`abjc-cbka-kj` f64 1T),
   1.612 against 1.611 (`adbjc-cbdka-kj` f64 1T), 1.519 against 1.494, 1.684 against
